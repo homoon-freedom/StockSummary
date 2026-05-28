@@ -10,6 +10,7 @@
             margin: 10px;
             background-color: #f5f6f9;
             color: #333;
+            font-size: 13px;
         }
         .container {
             max-width: 1100px;
@@ -23,20 +24,20 @@
             text-align: center;
             color: #4a5568;
             margin-bottom: 20px;
-            font-size: 1.4rem;
+            font-size: 1.3rem;
         }
 
         /* 공통 토글 버튼 스타일 */
         .btn-toggle {
             width: 100%;
-            height: 45px;
+            height: 42px;
             color: white;
             border: none;
             border-radius: 6px;
             cursor: pointer;
             font-weight: bold;
-            font-size: 14px;
-            margin-bottom: 15px;
+            font-size: 13px;
+            margin-bottom: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -54,11 +55,11 @@
         .config-section {
             display: none;
             flex-direction: column;
-            gap: 20px;
+            gap: 15px;
             background: #edf2f7;
-            padding: 15px;
+            padding: 12px;
             border-radius: 6px;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
         .config-box {
             background: #fff;
@@ -67,11 +68,11 @@
             border: 1px solid #cbd5e0;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
             box-sizing: border-box;
         }
         .config-box .title-label {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: bold;
             color: #2b6cb0;
             border-bottom: 1px solid #e2e8f0;
@@ -81,31 +82,31 @@
         .config-group {
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 4px;
         }
         .config-group label {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: bold;
             color: #4a5568;
         }
         
         .config-group select, .config-group input {
-            padding: 10px;
+            padding: 8px;
             border: 1px solid #cbd5e0;
             border-radius: 4px;
-            font-size: 16px;
+            font-size: 14px;
             box-sizing: border-box;
-            height: 45px;
+            height: 40px;
             width: 100%;
         }
         .btn-full {
             width: 100%;
-            height: 40px;
+            height: 38px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             font-weight: bold;
-            font-size: 13px;
+            font-size: 12px;
             color: white;
             box-sizing: border-box;
         }
@@ -116,7 +117,7 @@
         
         .btn-view-all { 
             background-color: #2b6cb0; 
-            margin-top: 5px;
+            margin-top: 3px;
         }
         .btn-view-all:hover { background-color: #2c5282; }
 
@@ -130,78 +131,65 @@
         .input-form {
             display: none;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
             background: #fff;
-            padding: 15px;
+            padding: 12px;
             border: 1px solid #e2e8f0;
             border-radius: 6px;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
             box-sizing: border-box;
         }
-        .form-group {
+        .input-form .form-group {
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 4px;
             width: 100%;
             box-sizing: border-box;
         }
-        .form-group label {
-            font-size: 13px;
+        .input-form .form-group label {
+            font-size: 12px;
             font-weight: bold;
             color: #4a5568;
         }
         
-        .form-group input, .form-group select {
-            padding: 8px 10px;
+        .input-form .form-group input, .input-form .form-group select {
+            padding: 8px;
             border: 1px solid #cbd5e0;
             border-radius: 4px;
-            font-size: 16px;
+            font-size: 14px;
             box-sizing: border-box;
-            height: 45px;
-            width: 100% !important;
+            height: 40px;
+            width: 100%;
             background-color: #fff;
             font-family: inherit;
             appearance: none;
             -webkit-appearance: none;
         }
-        .form-group input[type="date"] {
-            display: block;
-            position: relative;
-        }
         .btn-submit {
-            height: 45px;
+            height: 40px;
             background-color: #2b6cb0;
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             font-weight: bold;
-            font-size: 15px;
+            font-size: 14px;
             margin-top: 5px;
             width: 100%;
             box-sizing: border-box;
         }
-        .btn-submit:hover {
-            background-color: #2c5282;
-        }
-        .btn-edit-mode {
-            background-color: #dd6b20 !important;
-        }
-        .btn-edit-mode:hover {
-            background-color: #c05621 !important;
-        }
-
+        
         /* 3. 투자 현황 대시보드 */
         .summary-box {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 12px;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
             background: #f7fafc;
             border: 1px solid #e2e8f0;
-            padding: 15px;
+            padding: 12px;
             border-radius: 6px;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
         .summary-item {
             display: flex;
@@ -210,17 +198,16 @@
         .summary-item label {
             font-size: 11px;
             color: #718096;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
         }
         .summary-item span, .summary-item input {
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
             border: none;
             background: transparent;
         }
         
         .summary-item input {
-            font-size: 16px;
             border-bottom: 2px solid #cbd5e0;
             padding: 2px 0;
             outline: none;
@@ -229,6 +216,40 @@
         .summary-item.input-highlight input {
             border-bottom: 2px solid #3182ce;
             color: #333;
+        }
+
+        /* 하단 빠른 전환 컨테이너 */
+        .quick-select-container {
+            background-color: #edf2f7;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #cbd5e0;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .quick-select-row {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .quick-select-row label {
+            font-size: 11px;
+            font-weight: bold;
+            color: #2b6cb0;
+        }
+        .quick-dropdown {
+            width: 100%;
+            height: 40px;
+            padding: 8px;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #4a5568;
+            background-color: #fff;
+            box-sizing: border-box;
         }
 
         /* 모바일 최적화 테이블 */
@@ -240,8 +261,8 @@
         }
         th, td {
             border: 1px solid #e2e8f0;
-            padding: 8px 4px;
-            font-size: 14px;
+            padding: 6px 4px;
+            font-size: 13px;
             box-sizing: border-box;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -251,6 +272,9 @@
             color: #4a5568;
             font-weight: bold;
             text-align: center;
+            font-size: 12px;
+            line-height: 1.4; /* 2줄 헤더 가독성을 위한 줄간격 조정 */
+            padding: 8px 4px; /* 상하 여백 확보 */
         }
         
         .col-1 { width: 33.33%; text-align: center; }
@@ -265,22 +289,17 @@
             border-bottom: 2px solid #cbd5e0;
         }
         
-        /* 📅 클릭 가능한 날짜 스타일 정의 */
         .clickable-date {
-            font-size: 12px; 
+            font-size: 11px; 
             font-weight: bold; 
             color: #2b6cb0; 
             vertical-align: middle;
             cursor: pointer;
             text-decoration: underline;
         }
-        .clickable-date:hover {
-            color: #2c5282;
-            background-color: #ebf8ff;
-        }
         
         .lbl-desc {
-            font-size: 11px;
+            font-size: 10px;
             color: #94a3b8;
             display: block;
             margin-bottom: 2px;
@@ -288,7 +307,7 @@
         }
         .val-data {
             font-weight: bold;
-            font-size: 14px;
+            font-size: 13px;
         }
         
         .type-buy { color: #e53e3e; font-weight: bold; }
@@ -297,18 +316,11 @@
         .minus { color: #3182ce; font-weight: bold; }
         
         .view-title {
-            font-size: 15px;
+            font-size: 14px;
             font-weight: bold;
-            margin-top: 10px;
+            margin-top: 5px;
             color: #2b6cb0;
-            line-height: 1.6;
-        }
-
-        .flex-between {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
+            line-height: 1.5;
         }
 
         /* 모달 팝업창 레이아웃 스타일 */
@@ -326,9 +338,9 @@
         .modal-content {
             background: white;
             width: 100%;
-            max-width: 700px;
+            max-width: 750px;
             border-radius: 8px;
-            padding: 20px;
+            padding: 15px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             box-sizing: border-box;
             max-height: 90vh;
@@ -339,53 +351,41 @@
             justify-content: space-between;
             align-items: center;
             border-bottom: 2px solid #cbd5e0;
-            padding-bottom: 10px;
-            margin-bottom: 15px;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
         }
         .modal-title {
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
             color: #2b6cb0;
         }
-        .modal-close {
-            background: none; border: none; font-size: 20px; font-weight: bold; cursor: pointer; color: #718096;
-        }
-        .modal-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
         .modal-table th, .modal-table td {
-            padding: 10px 6px;
-            font-size: 13px;
-            text-align: right;
-            border: 1px solid #cbd5e0;
+            padding: 8px 4px;
+            font-size: 12px;
         }
-        .modal-table th {
-            text-align: center;
-            background-color: #edf2f7;
-        }
-        .modal-table td.text-center { text-align: center; }
-        .modal-table td.text-left { text-align: left; font-weight: bold; }
-
-        /* 🔘 컨텍스트 제어 전용 컨펌창(모달) 추가 스타일 */
-        .action-modal-content {
-            max-width: 320px;
-            text-align: center;
-        }
-        .action-modal-buttons {
+        
+        /* 자산 비중 그래픽 바 스타일 */
+        .proportion-container {
             display: flex;
-            gap: 10px;
-            margin-top: 20px;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 2px;
         }
-        .btn-action-modal {
-            flex: 1;
-            height: 40px;
-            border: none;
-            border-radius: 4px;
-            font-weight: bold;
-            cursor: pointer;
-            color: white;
+        .proportion-bar {
+            width: 100%;
+            height: 5px;
+            background-color: #e2e8f0;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .proportion-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3182ce, #4299e1);
+            border-radius: 3px;
+        }
+
+        .action-modal-content {
+            max-width: 300px;
         }
     </style>
 </head>
@@ -403,12 +403,12 @@
             <div class="title-label">👤 사용자 관리</div>
             <div class="config-group">
                 <label>등록된 사용자 리스트</label>
-                <select id="userSelect" onchange="loadSeedMoney(); calculateAll();"></select>
+                <select id="userSelect" onchange="handleUserChange(this.value)"></select>
             </div>
             <button class="btn-full btn-del" onclick="deleteUser()">선택된 사용자 삭제</button>
             <button class="btn-full btn-add btn-view-all" onclick="openUserDashboard()">📂 보유 종목 전체 현황 한눈에 보기</button>
             
-            <div class="config-group" style="margin-top: 15px;">
+            <div class="config-group" style="margin-top: 10px;">
                 <label>새로 추가할 사용자 이름</label>
                 <input type="text" id="newUserName" placeholder="예: 홍길동">
             </div>
@@ -500,15 +500,26 @@
         </div>
     </div>
 
-    <div class="view-title" id="viewTitle" style="margin-bottom: 15px; text-align: center; font-size: 16px;"></div>
+    <div class="quick-select-container">
+        <div class="quick-select-row">
+            <label for="quickUserSelect">👤 빠른 사용자 전환 리스트</label>
+            <select class="quick-dropdown" id="quickUserSelect" onchange="handleUserChange(this.value)"></select>
+        </div>
+        <div class="quick-select-row">
+            <label for="quickStockSelect">🔍 빠른 종목 전환 리스트</label>
+            <select class="quick-dropdown" id="quickStockSelect" onchange="selectStockFromQuickSelect(this.value)"></select>
+        </div>
+    </div>
+
+    <div class="view-title" id="viewTitle" style="margin-bottom: 15px; text-align: center;"></div>
 
     <div>
         <table>
             <thead>
                 <tr>
-                    <th class="col-1">날짜 / 평단가</th>
-                    <th class="col-2">구분 / 수량</th>
-                    <th class="col-3">정산 금액 / 체결 상세</th>
+                    <th class="col-1">날짜<br>평단가</th>
+                    <th class="col-2">구분<br>수량</th>
+                    <th class="col-3">정산 금액<br>체결 상세</th>
                 </tr>
             </thead>
             <tbody id="tradeLogBody"></tbody>
@@ -526,11 +537,11 @@
             <table class="modal-table">
                 <thead>
                     <tr>
-                        <th>종목명(코드)</th>
-                        <th>보유수량</th>
-                        <th>현재 평단가</th>
-                        <th>총 매입금액</th>
-                        <th>총 실현손익</th>
+                        <th style="width: 25%;">종목명(코드)</th>
+                        <th style="width: 15%;">보유수량</th>
+                        <th style="width: 18%;">현재 평단가</th>
+                        <th style="width: 24%;">총 매입금액 (자산 비중)</th>
+                        <th style="width: 18%;">총 실현손익</th>
                     </tr>
                 </thead>
                 <tbody id="modalTableBody"></tbody>
@@ -617,7 +628,6 @@
         }
     }
 
-    // 관리창 열고 접기 토글
     function toggleConfigSection() {
         const configSection = document.getElementById('configSection');
         const configText = document.getElementById('configText');
@@ -634,7 +644,6 @@
         }
     }
 
-    // 입력창 열고 접기 토글
     function toggleInputSection(forceOpen = false) {
         const inputForm = document.getElementById('inputForm');
         const inputText = document.getElementById('inputText');
@@ -655,14 +664,55 @@
     function renderSelectOptions() {
         const userSelect = document.getElementById('userSelect');
         const stockSelect = document.getElementById('stockSelect');
+        const quickUserSelect = document.getElementById('quickUserSelect');
+        
         const currentSelectedUser = userSelect.value || users[0];
         const currentSelectedStock = stockSelect.value || (stocks[0] ? stocks[0].name : '');
 
-        userSelect.innerHTML = users.map(u => `<option value="${u}" ${u===currentSelectedUser?'selected':''}>${u}</option>`).join('');
-        stockSelect.innerHTML = stocks.map(s => {
+        const userOptionsHTML = users.map(u => `<option value="${u}">${u}</option>`).join('');
+        userSelect.innerHTML = userOptionsHTML;
+        quickUserSelect.innerHTML = userOptionsHTML;
+        
+        userSelect.value = currentSelectedUser;
+        quickUserSelect.value = currentSelectedUser;
+        
+        const stockOptionsHTML = stocks.map(s => {
             const displayLabel = s.code ? `${s.name} (${s.code})` : s.name;
-            return `<option value="${s.name}" ${s.name===currentSelectedStock?'selected':''}>${displayLabel}</option>`;
+            return `<option value="${s.name}">${displayLabel}</option>`;
         }).join('');
+
+        stockSelect.innerHTML = stockOptionsHTML;
+        stockSelect.value = currentSelectedStock;
+
+        renderQuickStockSelect(currentSelectedStock, stockOptionsHTML);
+    }
+
+    function renderQuickStockSelect(currentSelectedStock, optionsHTML) {
+        const quickSelect = document.getElementById('quickStockSelect');
+        if (!quickSelect) return;
+
+        if (stocks.length === 0) {
+            quickSelect.innerHTML = `<option value="">등록된 종목이 없습니다</option>`;
+            return;
+        }
+
+        quickSelect.innerHTML = optionsHTML;
+        quickSelect.value = currentSelectedStock;
+    }
+
+    function handleUserChange(userName) {
+        document.getElementById('userSelect').value = userName;
+        document.getElementById('quickUserSelect').value = userName;
+        loadSeedMoney();
+        calculateAll();
+    }
+
+    function selectStockFromQuickSelect(stockName) {
+        const stockSelect = document.getElementById('stockSelect');
+        if (stockSelect) {
+            stockSelect.value = stockName;
+            calculateAll();
+        }
     }
 
     function addUser() {
@@ -673,11 +723,7 @@
         users.push(name);
         input.value = '';
         renderSelectOptions();
-        document.getElementById('userSelect').value = name;
-        
-        saveToLocalStorage();
-        loadSeedMoney(); 
-        calculateAll();
+        handleUserChange(name);
     }
 
     function deleteUser() {
@@ -879,18 +925,14 @@
         }
     }
 
-    // 📌 실시간 현재가 요청 함수 수정 완료 (Yahoo Finance 및 CORS 차단 해제 프록시 적용)
     function fetchCurrentPrice(stockCode) {
         if (!stockCode) return;
         
         const currentPriceInput = document.getElementById('currentPrice');
         currentPriceInput.value = "조회 중...";
 
-        // 한국 주식 코드 규칙 적용 (.KS)
         const yahooTicker = stockCode.endsWith('.KS') || stockCode.endsWith('.KQ') ? stockCode : `${stockCode}.KS`;
         const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooTicker}?interval=1m&range=1d`;
-        
-        // 브라우저 CORS 차단 보안을 해제하기 위한 올인원 프록시 경로 사용
         const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
 
         fetch(proxyUrl)
@@ -902,7 +944,8 @@
                 const rawJson = JSON.parse(data.contents);
                 
                 if (rawJson && rawJson.chart && rawJson.chart.result && rawJson.chart.result[0]) {
-                    const closePrice = rawJson.chart.result[0].meta.regularMarketPrice;
+                    const meta = rawJson.chart.result[0].meta;
+                    const closePrice = meta.regularMarketPrice || meta.previousClose;
                     
                     if (closePrice) {
                         const currentStock = document.getElementById('stockSelect').value;
@@ -925,6 +968,17 @@
             });
     }
 
+    function calculateCurrentBalance(currentUser, seedMoney) {
+        let currentBalance = seedMoney;
+        tradeLogs.forEach(log => {
+            if (log.user === currentUser) {
+                if (log.type === '매수') currentBalance -= (log.price * log.qty);
+                if (log.type === '매도') currentBalance += (log.price * log.qty);
+            }
+        });
+        document.getElementById('currentBalance').innerText = currentBalance.toLocaleString() + " 원";
+    }
+
     function openUserDashboard() {
         const currentUser = document.getElementById('userSelect').value;
         if (!currentUser) return alert('사용자를 먼저 선택해 주세요.');
@@ -940,6 +994,9 @@
             document.getElementById('dashboardModal').style.display = 'flex';
             return;
         }
+
+        let calculatedStocksData = [];
+        let totalPortfolioPurchaseAmount = 0;
 
         userStocks.forEach(stockName => {
             let currentQty = 0;
@@ -966,19 +1023,38 @@
             });
 
             let totalPurchaseAmount = currentAvgPrice * currentQty;
-            let profitClass = totalProfit > 0 ? "plus" : (totalProfit < 0 ? "minus" : "");
-            let profitSign = totalProfit > 0 ? "+" : "";
+            totalPortfolioPurchaseAmount += totalPurchaseAmount;
 
-            const targetStockObj = stocks.find(s => s.name === stockName);
+            calculatedStocksData.push({
+                stockName, currentQty, currentAvgPrice, totalPurchaseAmount, totalProfit
+            });
+        });
+
+        calculatedStocksData.forEach(data => {
+            let profitClass = data.totalProfit > 0 ? "plus" : (data.totalProfit < 0 ? "minus" : "");
+            let profitSign = data.totalProfit > 0 ? "+" : "";
+
+            const targetStockObj = stocks.find(s => s.name === data.stockName);
             const codeDisplay = (targetStockObj && targetStockObj.code) ? `(${targetStockObj.code})` : '';
+
+            let proportionRate = totalPortfolioPurchaseAmount > 0 
+                ? ((data.totalPurchaseAmount / totalPortfolioPurchaseAmount) * 100).toFixed(1) 
+                : "0.0";
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td class="text-left">${stockName}${codeDisplay}</td>
-                <td class="text-center" style="font-weight:bold;">${currentQty.toLocaleString()} 주</td>
-                <td>${currentAvgPrice.toLocaleString()} 원</td>
-                <td style="color:#4a5568;">${totalPurchaseAmount.toLocaleString()} 원</td>
-                <td class="${profitClass}" style="font-weight:bold;">${profitSign}${totalProfit.toLocaleString()} 원</td>
+                <td class="text-left">${data.stockName}${codeDisplay}</td>
+                <td class="text-center" style="font-weight:bold;">${data.currentQty.toLocaleString()} 주</td>
+                <td>${data.currentAvgPrice.toLocaleString()} 원</td>
+                <td>
+                    <div class="proportion-container">
+                        <div><strong>${data.totalPurchaseAmount.toLocaleString()} 원</strong> <span style="font-size:11px; color:#718096;">(${proportionRate}%)</span></div>
+                        <div class="proportion-bar">
+                            <div class="proportion-fill" style="width: ${proportionRate}%;"></div>
+                        </div>
+                    </div>
+                </td>
+                <td class="${profitClass}" style="font-weight:bold;">${profitSign}${data.totalProfit.toLocaleString()} 원</td>
             `;
             tbody.appendChild(tr);
         });
@@ -999,6 +1075,16 @@
         const activeStockObj = stocks.find(s => s.name === currentStock);
         const titleCodeText = (activeStockObj && activeStockObj.code) ? ` (${activeStockObj.code})` : '';
 
+        const quickUserSelect = document.getElementById('quickUserSelect');
+        if (quickUserSelect && quickUserSelect.value !== currentUser) {
+            quickUserSelect.value = currentUser;
+        }
+
+        const quickSelect = document.getElementById('quickStockSelect');
+        if (quickSelect && quickSelect.value !== currentStock) {
+            quickSelect.value = currentStock;
+        }
+
         if (!currentUser || !currentStock) {
             document.getElementById('viewTitle').innerHTML = `조회 계좌: [${currentUser || '없음'}]<br>선택 종목: [${currentStock || '없음'}]`;
             document.getElementById('tradeLogBody').innerHTML = '';
@@ -1015,7 +1101,6 @@
 
         document.getElementById('viewTitle').innerHTML = `조회 계좌: [${currentUser}]<br>선택 종목: [${currentStock}${titleCodeText}]`;
 
-        // 📌 종목 선택 시 실시간 시세 연동 가동
         if (activeStockObj && activeStockObj.code) {
             fetchCurrentPrice(activeStockObj.code);
         } else {
@@ -1027,13 +1112,7 @@
         const tbody = document.getElementById('tradeLogBody');
         tbody.innerHTML = ''; 
 
-        let currentBalance = seedMoney;
-        tradeLogs.forEach(log => {
-            if (log.user === currentUser) {
-                if (log.type === '매수') currentBalance -= (log.price * log.qty);
-                if (log.type === '매도') currentBalance += (log.price * log.qty);
-            }
-        });
+        calculateCurrentBalance(currentUser, seedMoney);
 
         let currentQty = 0;             
         let currentAvgPrice = 0;        
@@ -1069,7 +1148,7 @@
                 let formattedProfit = profit.toLocaleString() + " 원";
                 if (profit > 0) { profitClass = "plus"; formattedProfit = "+" + formattedProfit; }
                 else if (profit < 0) { profitClass = "minus"; }
-                profitDisplay = `<span class="${profitClass}" style="font-weight:bold; font-size:13px;">${formattedProfit}<br>(${profitRate})</span>`;
+                profitDisplay = `<span class="${profitClass}" style="font-weight:bold; font-size:12px;">${formattedProfit}<br>(${profitRate})</span>`;
             }
 
             const trMain = document.createElement('tr');
@@ -1077,7 +1156,7 @@
             
             trMain.innerHTML = `
                 <td class="col-1 clickable-date" onclick="showActionModal(${globalIndex})">${log.date}</td>
-                <td class="col-2 ${log.type === '매수' ? 'type-buy' : 'type-sell'}" style="font-size:15px; vertical-align:middle;">${log.type}</td>
+                <td class="col-2 ${log.type === '매수' ? 'type-buy' : 'type-sell'}" style="font-size:14px; vertical-align:middle;">${log.type}</td>
                 <td class="col-3">
                     <span class="lbl-desc">정산 금액</span>
                     <span class="val-data">${tradeAmount.toLocaleString()} 원</span>
@@ -1109,7 +1188,6 @@
             tbody.appendChild(trSub);
         });
 
-        document.getElementById('currentBalance').innerText = currentBalance.toLocaleString() + " 원";
         document.getElementById('totalQuantity').innerText = currentQty.toLocaleString() + " 주";
         document.getElementById('avgPrice').innerText = currentAvgPrice.toLocaleString() + " 원";
         
