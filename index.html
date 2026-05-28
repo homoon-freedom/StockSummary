@@ -301,6 +301,7 @@
             font-weight: bold;
             margin-top: 10px;
             color: #2b6cb0;
+            line-height: 1.6;
         }
 
         .flex-between {
@@ -425,7 +426,11 @@
                 <label>새로 추가할 종목명</label>
                 <input type="text" id="newStockName" placeholder="예: 삼성전자">
             </div>
-            <button class="btn-full btn-add" onclick="addStock()">새 종목 등록</button>
+            <div class="config-group" style="margin-top: 5px;">
+                <label>새로 추가할 종목코드</label>
+                <input type="text" id="newStockCode" placeholder="예: 005930">
+            </div>
+            <button class="btn-full btn-add" style="margin-top: 5px;" onclick="addStock()">새 종목 등록</button>
         </div>
     </div>
 
@@ -475,7 +480,7 @@
         </div>
         <div class="summary-item input-highlight">
             <label>📊 현재가 입력 (원)</label>
-            <input type="text" id="currentPrice" placeholder="현재가 입력" oninput="formatInputValue(this); updateStockPriceMap();">
+            <input type="text" id="currentPrice" placeholder="조회 중..." oninput="formatInputValue(this); updateStockPriceMap();">
         </div>
         <div class="summary-item">
             <label>총 매입금액</label>
@@ -495,7 +500,7 @@
         </div>
     </div>
 
-    <div class="view-title" id="viewTitle" style="margin-bottom: 10px; text-align: center; font-size: 16px;">조회 계좌: 로딩 중...</div>
+    <div class="view-title" id="viewTitle" style="margin-bottom: 15px; text-align: center; font-size: 16px;"></div>
 
     <div>
         <table>
@@ -521,7 +526,7 @@
             <table class="modal-table">
                 <thead>
                     <tr>
-                        <th>종목명</th>
+                        <th>종목명(코드)</th>
                         <th>보유수량</th>
                         <th>현재 평단가</th>
                         <th>총 매입금액</th>
@@ -547,7 +552,10 @@
 
 <script>
     let users = ["남호문", "홍길동"];
-    let stocks = ["삼성전자 레버리지", "삼성전자"];
+    let stocks = [
+        { name: "삼성전자 레버리지", code: "122630" },
+        { name: "삼성전자", code: "005930" }
+    ];
     let tradeLogs = [];
     let stockPrices = {};
     
@@ -560,7 +568,7 @@
         document.getElementById('tradeDate').value = new Date().toISOString().substring(0, 10);
         loadFromLocalStorage();
         renderSelectOptions();
-        loadSeedMoney(); // 초기 실행 시 첫 사용자의 씨드머니 로드
+        loadSeedMoney(); 
         calculateAll();
     };
 
@@ -571,7 +579,6 @@
         localStorage.setItem('calculator_stockPrices', JSON.stringify(stockPrices));
     }
 
-    // 씨드머니 저장 시 유저명을 식별자 키값에 포함
     function saveSeedMoney() {
         const currentUser = document.getElementById('userSelect').value;
         if (!currentUser) return;
@@ -579,13 +586,10 @@
         localStorage.setItem(`calculator_seedMoney_${currentUser}`, seedMoney);
     }
 
-    // 선택된 유저 전용 씨드머니 로드 기능으로 변경
     function loadSeedMoney() {
         const currentUser = document.getElementById('userSelect').value;
         if (!currentUser) return;
         const storedSeed = localStorage.getItem(`calculator_seedMoney_${currentUser}`);
-        
-        // 데이터가 기록된 적 없다면 디폴트값 10,000,000 할당
         document.getElementById('seedMoney').value = storedSeed ? storedSeed : "10,000,000";
     }
 
@@ -596,7 +600,10 @@
         const storedPrices = localStorage.getItem('calculator_stockPrices');
 
         if (storedUsers) users = JSON.parse(storedUsers);
-        if (storedStocks) stocks = JSON.parse(storedStocks);
+        if (storedStocks) {
+            const parsed = JSON.parse(storedStocks);
+            stocks = parsed.map(item => typeof item === 'string' ? { name: item, code: '' } : item);
+        }
         if (storedLogs) tradeLogs = JSON.parse(storedLogs);
         if (storedPrices) stockPrices = JSON.parse(storedPrices);
     }
@@ -647,10 +654,13 @@
         const userSelect = document.getElementById('userSelect');
         const stockSelect = document.getElementById('stockSelect');
         const currentSelectedUser = userSelect.value || users[0];
-        const currentSelectedStock = stockSelect.value || stocks[0];
+        const currentSelectedStock = stockSelect.value || (stocks[0] ? stocks[0].name : '');
 
         userSelect.innerHTML = users.map(u => `<option value="${u}" ${u===currentSelectedUser?'selected':''}>${u}</option>`).join('');
-        stockSelect.innerHTML = stocks.map(s => `<option value="${s}" ${s===currentSelectedStock?'selected':''}>${s}</option>`).join('');
+        stockSelect.innerHTML = stocks.map(s => {
+            const displayLabel = s.code ? `${s.name} (${s.code})` : s.name;
+            return `<option value="${s.name}" ${s.name===currentSelectedStock?'selected':''}>${displayLabel}</option>`;
+        }).join('');
     }
 
     function addUser() {
@@ -664,7 +674,7 @@
         document.getElementById('userSelect').value = name;
         
         saveToLocalStorage();
-        loadSeedMoney(); // 새 유저 할당 후 초기화
+        loadSeedMoney(); 
         calculateAll();
     }
 
@@ -677,7 +687,6 @@
         users = users.filter(u => u !== targetUser);
         tradeLogs = tradeLogs.filter(log => log.user !== targetUser);
         
-        // 로컬스토리지 내 개별 씨드머니 삭제 청소
         localStorage.removeItem(`calculator_seedMoney_${targetUser}`);
 
         renderSelectOptions();
@@ -687,12 +696,18 @@
     }
 
     function addStock() {
-        const input = document.getElementById('newStockName');
-        const name = input.value.trim();
+        const nameInput = document.getElementById('newStockName');
+        const codeInput = document.getElementById('newStockCode');
+        const name = nameInput.value.trim();
+        const code = codeInput.value.trim();
+
         if(!name) return alert('종목명을 입력하세요.');
-        if(stocks.includes(name)) return alert('이미 존재하는 종목입니다.');
-        stocks.push(name);
-        input.value = '';
+        if(stocks.some(s => s.name === name)) return alert('이미 존재하는 종목명입니다.');
+        
+        stocks.push({ name, code });
+        nameInput.value = '';
+        codeInput.value = '';
+        
         renderSelectOptions();
         document.getElementById('stockSelect').value = name;
         
@@ -702,13 +717,13 @@
 
     function deleteStock() {
         const stockSelect = document.getElementById('stockSelect');
-        const targetStock = stockSelect.value;
-        if (!targetStock) return alert('삭제할 종목이 없습니다.');
-        if (!confirm(`'${targetStock}' 종목과 관련된 모든 매매 데이터가 삭제됩니다. 진행하시겠습니까?`)) return;
+        const targetStockName = stockSelect.value;
+        if (!targetStockName) return alert('삭제할 종목이 없습니다.');
+        if (!confirm(`'${targetStockName}' 종목과 관련된 모든 매매 데이터가 삭제됩니다. 진행하시겠습니까?`)) return;
 
-        stocks = stocks.filter(s => s !== targetStock);
-        tradeLogs = tradeLogs.filter(log => log.stock !== targetStock);
-        delete stockPrices[targetStock];
+        stocks = stocks.filter(s => s.name !== targetStockName);
+        tradeLogs = tradeLogs.filter(log => log.stock !== targetStockName);
+        delete stockPrices[targetStockName];
 
         renderSelectOptions();
         saveToLocalStorage();
@@ -862,6 +877,44 @@
         }
     }
 
+    // 📌 실시간 현재가 요청 함수 추가 (네이버 금융 스크래핑/프록시 경로 활용)
+    function fetchCurrentPrice(stockCode) {
+        if (!stockCode) return;
+        
+        const currentPriceInput = document.getElementById('currentPrice');
+        currentPriceInput.value = "조회 중...";
+
+        // CORS 회피용 공공 파싱 프록시 경로 활용
+        const url = `https://api.allorigins.win/get?url=${encodeURIComponent('https://polling.finance.naver.com/api/realtime?query=SERVICE_ITEM:' + stockCode)}`;
+
+        fetch(url)
+            .then(response => {
+                if (response.ok) return response.json();
+                throw new Error('Network response was not ok.');
+            })
+            .then(data => {
+                const rawJson = JSON.parse(data.contents);
+                if(rawJson && rawJson.result && rawJson.result.areas) {
+                    const itemData = rawJson.result.areas[0].datas[0];
+                    if(itemData && itemData.nv) {
+                        const closePrice = itemData.nv; // 현재가(종가) 추출
+                        
+                        // 전역 데이터 매핑 및 UI 업데이트
+                        const currentStock = document.getElementById('stockSelect').value;
+                        currentPriceInput.value = closePrice.toLocaleString();
+                        stockPrices[currentStock] = closePrice.toLocaleString();
+                        
+                        saveToLocalStorage();
+                        calculateRealtimeMetrics();
+                    }
+                }
+            })
+            .catch(error => {
+                console.error("현재가 조회 실패:", error);
+                currentPriceInput.value = "오류 발생";
+            });
+    }
+
     function openUserDashboard() {
         const currentUser = document.getElementById('userSelect').value;
         if (!currentUser) return alert('사용자를 먼저 선택해 주세요.');
@@ -906,9 +959,12 @@
             let profitClass = totalProfit > 0 ? "plus" : (totalProfit < 0 ? "minus" : "");
             let profitSign = totalProfit > 0 ? "+" : "";
 
+            const targetStockObj = stocks.find(s => s.name === stockName);
+            const codeDisplay = (targetStockObj && targetStockObj.code) ? `(${targetStockObj.code})` : '';
+
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td class="text-left">${stockName}</td>
+                <td class="text-left">${stockName}${codeDisplay}</td>
                 <td class="text-center" style="font-weight:bold;">${currentQty.toLocaleString()} 주</td>
                 <td>${currentAvgPrice.toLocaleString()} 원</td>
                 <td style="color:#4a5568;">${totalPurchaseAmount.toLocaleString()} 원</td>
@@ -930,8 +986,11 @@
         const currentUser = document.getElementById('userSelect').value;
         const currentStock = document.getElementById('stockSelect').value;
         
-        document.getElementById('viewTitle').innerText = `조회 계좌: [${currentUser || '없음'}] - [${currentStock || '없음'}]`;
+        const activeStockObj = stocks.find(s => s.name === currentStock);
+        const titleCodeText = (activeStockObj && activeStockObj.code) ? ` (${activeStockObj.code})` : '';
+
         if (!currentUser || !currentStock) {
+            document.getElementById('viewTitle').innerHTML = `조회 계좌: [${currentUser || '없음'}]<br>선택 종목: [${currentStock || '없음'}]`;
             document.getElementById('tradeLogBody').innerHTML = '';
             document.getElementById('currentBalance').innerText = "0 원";
             document.getElementById('totalQuantity').innerText = "0 주";
@@ -944,7 +1003,14 @@
             return;
         }
 
-        document.getElementById('currentPrice').value = stockPrices[currentStock] || '';
+        document.getElementById('viewTitle').innerHTML = `조회 계좌: [${currentUser}]<br>선택 종목: [${currentStock}${titleCodeText}]`;
+
+        // 📌 종목 선택 시 API 호출을 통해 실시간 시세 반영 (종목코드가 있을 때만 구동)
+        if (activeStockObj && activeStockObj.code) {
+            fetchCurrentPrice(activeStockObj.code);
+        } else {
+            document.getElementById('currentPrice').value = stockPrices[currentStock] || '';
+        }
 
         const seedMoneyRaw = document.getElementById('seedMoney').value.replace(/,/g, '');
         const seedMoney = parseFloat(seedMoneyRaw) || 0;
