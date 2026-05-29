@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>주식 평단가 계산기</title>
+    <title>주식 평단가 계산기 (다중 계좌 지원)</title>
     <style>
         body {
             font-family: 'Malgun Gothic', sans-serif;
@@ -45,7 +45,7 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
-        /* 1. 사용자/종목 관리 토글 버튼 및 섹션 */
+        /* 1. 사용자/계좌/종목 관리 토글 버튼 및 섹션 */
         .btn-toggle-config {
             background-color: #4a5568;
         }
@@ -140,6 +140,17 @@
             box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
             box-sizing: border-box;
         }
+
+        /* 입력창 가로 정렬 레이아웃 */
+        .input-form .form-row {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+        .input-form .form-row .form-group {
+            flex: 1; /* 반반씩 차지 */
+        }
+
         .input-form .form-group {
             display: flex;
             flex-direction: column;
@@ -229,10 +240,17 @@
             flex-direction: column;
             gap: 10px;
         }
+        /* 사용자 & 계좌 전환 가로 정렬을 위한 래퍼 추가 */
+        .quick-select-row-group {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
         .quick-select-row {
             display: flex;
             flex-direction: column;
             gap: 4px;
+            flex: 1; /* 가로 공간을 균등하게 배분 */
         }
         .quick-select-row label {
             font-size: 11px;
@@ -391,7 +409,7 @@
             color: #718096;
             cursor: pointer;
             border-bottom: 3px solid transparent;
-            margin-bottom: -2px; /* 보더 겹침 처리 */
+            margin-bottom: -2px; 
         }
         .tab-btn:hover {
             color: #2b6cb0;
@@ -430,6 +448,22 @@
         .action-modal-content {
             max-width: 300px;
         }
+        .btn-action-modal {
+            width: 100%;
+            height: 38px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            color: white;
+            margin-top: 5px;
+        }
+        .action-modal-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -438,7 +472,7 @@
     <h2>주식 매매 내역 및 평단가 계산기</h2>
 
     <button class="btn-toggle btn-toggle-config" onclick="toggleConfigSection()">
-        <span id="configIcon">⚙️</span> <span id="configText">사용자 / 종목 관리창 열기</span>
+        <span id="configIcon">⚙️</span> <span id="configText">사용자/계좌/종목 설정 열기</span>
     </button>
 
     <div class="config-section" id="configSection">
@@ -449,8 +483,6 @@
                 <select id="userSelect" onchange="handleUserChange(this.value)"></select>
             </div>
             <button class="btn-full btn-del" onclick="deleteUser()">선택된 사용자 삭제</button>
-            <button class="btn-full btn-add btn-view-all" onclick="openUserDashboard()">📂 보유 종목 전체 현황 한눈에 보기</button>
-            
             <div class="config-group" style="margin-top: 10px;">
                 <label>새로 추가할 사용자 이름</label>
                 <input type="text" id="newUserName" placeholder="예: 홍길동">
@@ -459,7 +491,22 @@
         </div>
 
         <div class="config-box">
-            <div class="title-label">📈 종목 관리</div>
+            <div class="title-label">🏦 계좌 관리 (현재 사용자 전용)</div>
+            <div class="config-group">
+                <label>등록된 계좌 리스트</label>
+                <select id="accountSelect" onchange="handleAccountChange(this.value)"></select>
+            </div>
+            <button class="btn-full btn-del" onclick="deleteAccount()">선택된 계좌 삭제</button>
+            <button class="btn-full btn-add btn-view-all" onclick="openUserDashboard()">📂 현재 계좌 총 보유현황 한눈에 보기</button>
+            <div class="config-group" style="margin-top: 10px;">
+                <label>새로 추가할 계좌명</label>
+                <input type="text" id="newAccountName" placeholder="예: ISA계좌, 연금저축">
+            </div>
+            <button class="btn-full btn-add" onclick="addAccount()">새 계좌 등록</button>
+        </div>
+
+        <div class="config-box">
+            <div class="title-label">📈 종목 관리 (현재 계좌 전용)</div>
             <div class="config-group">
                 <label>등록된 종목 리스트</label>
                 <select id="stockSelect" onchange="handleStockChange(this.value)"></select>
@@ -478,30 +525,51 @@
     </div>
 
     <button class="btn-toggle btn-toggle-input" onclick="toggleInputSection()">
-        <span id="inputIcon">🔽</span> <span id="inputText">데이터 입력창 열기</span>
+        <span id="inputIcon">🔽</span> <span id="inputText">매매 데이터 입력창 열기</span>
     </button>
 
     <div class="input-form" id="inputForm">
-        <div class="form-group">
-            <label for="tradeDate">날짜</label>
-            <input type="date" id="tradeDate">
+        <div class="form-row" style="background-color: #f7fafc; padding: 8px; border-radius: 4px; border: 1px dashed #cbd5e0; margin-bottom: 5px;">
+            <div class="form-group">
+                <label for="inputUserSelect" style="color: #2b6cb0;">👤 입력 대상 사용자</label>
+                <select id="inputUserSelect" onchange="handleUserChange(this.value)"></select>
+            </div>
+            <div class="form-group">
+                <label for="inputAccountSelect" style="color: #2b6cb0;">🏦 입력 대상 계좌</label>
+                <select id="inputAccountSelect" onchange="handleAccountChange(this.value)"></select>
+            </div>
+            <div class="form-group">
+                <label for="inputStockSelect" style="color: #2b6cb0;">🔍 입력 대상 종목</label>
+                <select id="inputStockSelect" onchange="handleStockChange(this.value)"></select>
+            </div>
         </div>
-        <div class="form-group">
-            <label for="tradeType">구분</label>
-            <select id="tradeType" onchange="toggleInputFields()">
-                <option value="매수">매수</option>
-                <option value="매도">매도</option>
-                <option value="분배금">분배금</option>
-            </select>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="tradeDate">날짜</label>
+                <input type="date" id="tradeDate">
+            </div>
+            <div class="form-group">
+                <label for="tradeType">구분</label>
+                <select id="tradeType" onchange="toggleInputFields()">
+                    <option value="매수">매수</option>
+                    <option value="매도">매도</option>
+                    <option value="분배금">분배금</option>
+                </select>
+            </div>
         </div>
-        <div class="form-group">
-            <label id="priceLabel" for="tradePrice">매수가 (원)</label>
-            <input type="number" id="tradePrice" placeholder="금액 입력">
+
+        <div class="form-row">
+            <div class="form-group">
+                <label id="priceLabel" for="tradePrice">매수가 (원)</label>
+                <input type="number" id="tradePrice" placeholder="금액 입력">
+            </div>
+            <div class="form-group">
+                <label id="qtyLabel" for="tradeQty">체결수량 (주)</label>
+                <input type="number" id="tradeQty" placeholder="수량 입력">
+            </div>
         </div>
-        <div class="form-group">
-            <label id="qtyLabel" for="tradeQty">체결수량 (주)</label>
-            <input type="number" id="tradeQty" placeholder="수량 입력">
-        </div>
+        
         <button class="btn-submit" id="submitBtn" type="button" onclick="handleSubmit()">내역 추가</button>
     </div>
 
@@ -553,12 +621,18 @@
     </div>
 
     <div class="quick-select-container">
-        <div class="quick-select-row">
-            <label for="quickUserSelect">👤 빠른 사용자 전환 리스트</label>
-            <select class="quick-dropdown" id="quickUserSelect" onchange="handleUserChange(this.value)"></select>
+        <div class="quick-select-row-group">
+            <div class="quick-select-row">
+                <label for="quickUserSelect">👤 사용자 전환</label>
+                <select class="quick-dropdown" id="quickUserSelect" onchange="handleUserChange(this.value)"></select>
+            </div>
+            <div class="quick-select-row">
+                <label for="quickAccountSelect">🏦 계좌 전환</label>
+                <select class="quick-dropdown" id="quickAccountSelect" onchange="handleAccountChange(this.value)"></select>
+            </div>
         </div>
         <div class="quick-select-row">
-            <label for="quickStockSelect">🔍 빠른 종목 전환 리스트</label>
+            <label for="quickStockSelect">🔍 종목 전환</label>
             <select class="quick-dropdown" id="quickStockSelect" onchange="selectStockFromQuickSelect(this.value)"></select>
         </div>
     </div>
@@ -582,7 +656,7 @@
 <div class="modal-overlay" id="dashboardModal" onclick="closeUserDashboard(event)">
     <div class="modal-content" onclick="event.stopPropagation()">
         <div class="modal-header">
-            <div class="modal-title" id="modalTitle">사용자 보유 현황</div>
+            <div class="modal-title" id="modalTitle">계좌 보유 현황</div>
             <button class="modal-close" onclick="closeUserDashboard(null)">×</button>
         </div>
         
@@ -646,10 +720,21 @@
 
 <script>
     let users = ["남호문", "홍길동"];
-    let stocks = [
-        { name: "삼성전자 레버리지", code: "122630" },
-        { name: "삼성전자", code: "005930" }
-    ];
+    
+    let userAccountsMap = {
+        "남호문": ["기본계좌", "ISA계좌"],
+        "홍길동": ["기본계좌"]
+    };
+
+    let accountStocksMap = {
+        "남호문_기본계좌": [
+            { name: "삼성전자 레버리지", code: "122630" },
+            { name: "삼성전자", code: "005930" }
+        ],
+        "남호문_ISA계좌": [],
+        "홍길동_기본계좌": []
+    };
+    
     let tradeLogs = [];
     let stockPrices = {};
     
@@ -668,42 +753,74 @@
 
     function saveToLocalStorage() {
         localStorage.setItem('calculator_users', JSON.stringify(users));
-        localStorage.setItem('calculator_stocks', JSON.stringify(stocks));
+        localStorage.setItem('calculator_userAccountsMap', JSON.stringify(userAccountsMap));
+        localStorage.setItem('calculator_accountStocksMap', JSON.stringify(accountStocksMap));
         localStorage.setItem('calculator_tradeLogs', JSON.stringify(tradeLogs));
         localStorage.setItem('calculator_stockPrices', JSON.stringify(stockPrices));
     }
 
     function saveSeedMoney() {
         const currentUser = document.getElementById('userSelect').value;
+        const currentAccount = document.getElementById('accountSelect').value;
         const currentStock = document.getElementById('stockSelect').value;
-        if (!currentUser || !currentStock) return;
+        if (!currentUser || !currentAccount || !currentStock) return;
+        
         const seedMoney = document.getElementById('seedMoney').value;
-        localStorage.setItem(`calculator_seedMoney_${currentUser}_${currentStock}`, seedMoney);
+        localStorage.setItem(`calculator_seedMoney_${currentUser}_${currentAccount}_${currentStock}`, seedMoney);
     }
 
     function loadSeedMoney() {
         const currentUser = document.getElementById('userSelect').value;
+        const currentAccount = document.getElementById('accountSelect').value;
         const currentStock = document.getElementById('stockSelect').value;
-        if (!currentUser || !currentStock) {
+        
+        if (!currentUser || !currentAccount || !currentStock) {
             document.getElementById('seedMoney').value = "10,000,000";
             return;
         }
-        const storedSeed = localStorage.getItem(`calculator_seedMoney_${currentUser}_${currentStock}`);
+        
+        let storedSeed = localStorage.getItem(`calculator_seedMoney_${currentUser}_${currentAccount}_${currentStock}`);
+        
+        if (!storedSeed) {
+            storedSeed = localStorage.getItem(`calculator_seedMoney_${currentUser}_${currentStock}`);
+        }
+        
         document.getElementById('seedMoney').value = storedSeed ? storedSeed : "10,000,000";
     }
 
     function loadFromLocalStorage() {
         const storedUsers = localStorage.getItem('calculator_users');
-        const storedStocks = localStorage.getItem('calculator_stocks');
+        const storedUserAccountsMap = localStorage.getItem('calculator_userAccountsMap');
+        const storedAccountStocksMap = localStorage.getItem('calculator_accountStocksMap');
         const storedLogs = localStorage.getItem('calculator_tradeLogs');
         const storedPrices = localStorage.getItem('calculator_stockPrices');
 
         if (storedUsers) users = JSON.parse(storedUsers);
-        if (storedStocks) {
-            const parsed = JSON.parse(storedStocks);
-            stocks = parsed.map(item => typeof item === 'string' ? { name: item, code: '' } : item);
+        
+        if (storedUserAccountsMap && storedAccountStocksMap) {
+            userAccountsMap = JSON.parse(storedUserAccountsMap);
+            accountStocksMap = JSON.parse(storedAccountStocksMap);
+        } else {
+            users.forEach(u => {
+                userAccountsMap[u] = ["기본계좌"];
+                accountStocksMap[`${u}_기본계좌`] = [];
+            });
         }
-        if (storedLogs) tradeLogs = JSON.parse(storedLogs);
+
+        users.forEach(u => {
+            if (!userAccountsMap[u]) userAccountsMap[u] = ["기본계좌"];
+            userAccountsMap[u].forEach(acc => {
+                if (!accountStocksMap[`${u}_${acc}`]) accountStocksMap[`${u}_${acc}`] = [];
+            });
+        });
+
+        if (storedLogs) {
+            tradeLogs = JSON.parse(storedLogs);
+            tradeLogs.forEach(log => {
+                if (!log.account) log.account = "기본계좌";
+            });
+        }
+        
         if (storedPrices) stockPrices = JSON.parse(storedPrices);
     }
 
@@ -723,11 +840,11 @@
 
         if (configSection.style.display === 'none' || configSection.style.display === '') {
             configSection.style.display = 'flex';
-            configText.innerText = '사용자 / 종목 관리창 접기';
+            configText.innerText = '설정창 접기';
             configIcon.innerText = '❌';
         } else {
             configSection.style.display = 'none';
-            configText.innerText = '사용자 / 종목 관리창 열기';
+            configText.innerText = '사용자/계좌/종목 설정 열기';
             configIcon.innerText = '⚙️';
         }
     }
@@ -743,7 +860,7 @@
             inputIcon.innerText = '❌';
         } else {
             inputForm.style.display = 'none';
-            inputText.innerText = '데이터 입력창 열기';
+            inputText.innerText = '매매 데이터 입력창 열기';
             inputIcon.innerText = '🔽';
             if (editIndex > -1) resetForm(); 
         }
@@ -751,46 +868,111 @@
 
     function renderSelectOptions() {
         const userSelect = document.getElementById('userSelect');
-        const stockSelect = document.getElementById('stockSelect');
         const quickUserSelect = document.getElementById('quickUserSelect');
+        const inputUserSelect = document.getElementById('inputUserSelect'); // [연동 추가]
         
-        const currentSelectedUser = userSelect.value || users[0];
-        const currentSelectedStock = stockSelect.value || (stocks[0] ? stocks[0].name : '');
+        let currentSelectedUser = userSelect.value || users[0];
 
         const userOptionsHTML = users.map(u => `<option value="${u}">${u}</option>`).join('');
         userSelect.innerHTML = userOptionsHTML;
         quickUserSelect.innerHTML = userOptionsHTML;
+        inputUserSelect.innerHTML = userOptionsHTML; // [연동 추가]
         
+        if (!users.includes(currentSelectedUser) && users.length > 0) {
+            currentSelectedUser = users[0];
+        }
+
         userSelect.value = currentSelectedUser;
         quickUserSelect.value = currentSelectedUser;
+        inputUserSelect.value = currentSelectedUser; // [연동 추가]
         
-        const stockOptionsHTML = stocks.map(s => {
+        renderAccountOptions(currentSelectedUser);
+    }
+
+    function renderAccountOptions(userName) {
+        const accountSelect = document.getElementById('accountSelect');
+        const quickAccountSelect = document.getElementById('quickAccountSelect');
+        const inputAccountSelect = document.getElementById('inputAccountSelect'); // [연동 추가]
+        
+        const accounts = userAccountsMap[userName] || [];
+        let currentSelectedAccount = accountSelect.value;
+        
+        const accountOptionsHTML = accounts.map(a => `<option value="${a}">${a}</option>`).join('');
+        
+        if (accounts.length === 0) {
+            accountSelect.innerHTML = `<option value="">계좌 없음</option>`;
+            quickAccountSelect.innerHTML = `<option value="">계좌 없음</option>`;
+            inputAccountSelect.innerHTML = `<option value="">계좌 없음</option>`; // [연동 추가]
+            currentSelectedAccount = "";
+        } else {
+            accountSelect.innerHTML = accountOptionsHTML;
+            quickAccountSelect.innerHTML = accountOptionsHTML;
+            inputAccountSelect.innerHTML = accountOptionsHTML; // [연동 추가]
+            
+            if (accounts.includes(currentSelectedAccount)) {
+                accountSelect.value = currentSelectedAccount;
+            } else {
+                accountSelect.value = accounts[0];
+                currentSelectedAccount = accounts[0];
+            }
+            quickAccountSelect.value = accountSelect.value;
+            inputAccountSelect.value = accountSelect.value; // [연동 추가]
+        }
+        
+        renderStockOptions(userName, currentSelectedAccount);
+    }
+
+    function renderStockOptions(userName, accountName) {
+        const stockSelect = document.getElementById('stockSelect');
+        const quickStockSelect = document.getElementById('quickStockSelect');
+        const inputStockSelect = document.getElementById('inputStockSelect'); // [연동 추가]
+        
+        const key = `${userName}_${accountName}`;
+        const userStocks = accountStocksMap[key] || [];
+        let currentSelectedStock = stockSelect.value;
+
+        const stockOptionsHTML = userStocks.map(s => {
             const displayLabel = s.code ? `${s.name} (${s.code})` : s.name;
             return `<option value="${s.name}">${displayLabel}</option>`;
         }).join('');
 
-        stockSelect.innerHTML = stockOptionsHTML;
-        stockSelect.value = currentSelectedStock;
-
-        renderQuickStockSelect(currentSelectedStock, stockOptionsHTML);
-    }
-
-    function renderQuickStockSelect(currentSelectedStock, optionsHTML) {
-        const quickSelect = document.getElementById('quickStockSelect');
-        if (!quickSelect) return;
-
-        if (stocks.length === 0) {
-            quickSelect.innerHTML = `<option value="">등록된 종목이 없습니다</option>`;
-            return;
+        if (userStocks.length === 0) {
+            stockSelect.innerHTML = `<option value="">등록된 종목 없음</option>`;
+            quickStockSelect.innerHTML = `<option value="">등록된 종목 없음</option>`;
+            inputStockSelect.innerHTML = `<option value="">등록된 종목 없음</option>`; // [연동 추가]
+        } else {
+            stockSelect.innerHTML = stockOptionsHTML;
+            quickStockSelect.innerHTML = stockOptionsHTML;
+            inputStockSelect.innerHTML = stockOptionsHTML; // [연동 추가]
+            
+            if (userStocks.some(s => s.name === currentSelectedStock)) {
+                stockSelect.value = currentSelectedStock;
+            } else {
+                stockSelect.value = userStocks[0].name;
+            }
+            quickStockSelect.value = stockSelect.value;
+            inputStockSelect.value = stockSelect.value; // [연동 추가]
         }
-
-        quickSelect.innerHTML = optionsHTML;
-        quickSelect.value = currentSelectedStock;
     }
 
     function handleUserChange(userName) {
         document.getElementById('userSelect').value = userName;
         document.getElementById('quickUserSelect').value = userName;
+        document.getElementById('inputUserSelect').value = userName; // [연동 추가]
+        
+        renderAccountOptions(userName); 
+        loadSeedMoney();
+        calculateAll();
+    }
+
+    function handleAccountChange(accountName) {
+        document.getElementById('accountSelect').value = accountName;
+        document.getElementById('quickAccountSelect').value = accountName;
+        document.getElementById('inputAccountSelect').value = accountName; // [연동 추가]
+        
+        const currentUser = document.getElementById('userSelect').value;
+        renderStockOptions(currentUser, accountName); 
+        
         loadSeedMoney();
         calculateAll();
     }
@@ -798,6 +980,7 @@
     function handleStockChange(stockName) {
         document.getElementById('stockSelect').value = stockName;
         document.getElementById('quickStockSelect').value = stockName;
+        document.getElementById('inputStockSelect').value = stockName; // [연동 추가]
         loadSeedMoney();
         calculateAll();
     }
@@ -811,22 +994,33 @@
         const name = input.value.trim();
         if(!name) return alert('이름을 입력하세요.');
         if(users.includes(name)) return alert('이미 존재하는 사용자입니다.');
+        
         users.push(name);
+        userAccountsMap[name] = ["기본계좌"]; 
+        accountStocksMap[`${name}_기본계좌`] = [];
+        
         input.value = '';
         renderSelectOptions();
         handleUserChange(name);
+        saveToLocalStorage();
     }
 
     function deleteUser() {
         const userSelect = document.getElementById('userSelect');
         const targetUser = userSelect.value;
         if (!targetUser) return alert('삭제할 사용자가 없습니다.');
-        if (!confirm(`'${targetUser}' 사용자와 해당 사용자의 모든 매매 내역 및 설정 씨드머니가 삭제됩니다. 진행하시겠습니까?`)) return;
+        if (!confirm(`'${targetUser}' 사용자의 모든 계좌 및 매매 내역이 삭제됩니다. 진행하시겠습니까?`)) return;
 
-        stocks.forEach(s => {
-            localStorage.removeItem(`calculator_seedMoney_${targetUser}_${s.name}`);
+        const accounts = userAccountsMap[targetUser] || [];
+        accounts.forEach(acc => {
+            const stocks = accountStocksMap[`${targetUser}_${acc}`] || [];
+            stocks.forEach(s => {
+                localStorage.removeItem(`calculator_seedMoney_${targetUser}_${acc}_${s.name}`);
+            });
+            delete accountStocksMap[`${targetUser}_${acc}`];
         });
 
+        delete userAccountsMap[targetUser];
         users = users.filter(u => u !== targetUser);
         tradeLogs = tradeLogs.filter(log => log.user !== targetUser);
 
@@ -836,20 +1030,68 @@
         calculateAll();
     }
 
+    function addAccount() {
+        const currentUser = document.getElementById('userSelect').value;
+        if (!currentUser) return alert('사용자를 먼저 등록/선택해주세요.');
+
+        const input = document.getElementById('newAccountName');
+        const accName = input.value.trim();
+        if(!accName) return alert('계좌명을 입력하세요.');
+        if(userAccountsMap[currentUser].includes(accName)) return alert('현재 사용자에게 이미 존재하는 계좌명입니다.');
+        
+        userAccountsMap[currentUser].push(accName);
+        accountStocksMap[`${currentUser}_${accName}`] = [];
+        
+        input.value = '';
+        renderAccountOptions(currentUser);
+        document.getElementById('accountSelect').value = accName;
+        handleAccountChange(accName);
+        saveToLocalStorage();
+    }
+
+    function deleteAccount() {
+        const currentUser = document.getElementById('userSelect').value;
+        const targetAccount = document.getElementById('accountSelect').value;
+        if (!currentUser || !targetAccount) return alert('삭제할 계좌가 없습니다.');
+        if (!confirm(`'${currentUser}'님의 '${targetAccount}' 계좌와 포함된 모든 데이터가 삭제됩니다. 진행하시겠습니까?`)) return;
+
+        const stocks = accountStocksMap[`${currentUser}_${targetAccount}`] || [];
+        stocks.forEach(s => {
+            localStorage.removeItem(`calculator_seedMoney_${currentUser}_${targetAccount}_${s.name}`);
+        });
+
+        delete accountStocksMap[`${currentUser}_${targetAccount}`];
+        userAccountsMap[currentUser] = userAccountsMap[currentUser].filter(a => a !== targetAccount);
+        
+        tradeLogs = tradeLogs.filter(log => !(log.user === currentUser && log.account === targetAccount));
+
+        renderAccountOptions(currentUser);
+        saveToLocalStorage();
+        loadSeedMoney();
+        calculateAll();
+    }
+
     function addStock() {
+        const currentUser = document.getElementById('userSelect').value;
+        const currentAccount = document.getElementById('accountSelect').value;
+        if (!currentUser || !currentAccount) return alert('사용자와 계좌를 먼저 선택해주세요.');
+
         const nameInput = document.getElementById('newStockName');
         const codeInput = document.getElementById('newStockCode');
         const name = nameInput.value.trim();
         const code = codeInput.value.trim();
+        
+        const key = `${currentUser}_${currentAccount}`;
 
         if(!name) return alert('종목명을 입력하세요.');
-        if(stocks.some(s => s.name === name)) return alert('이미 존재하는 종목명입니다.');
+        if(!accountStocksMap[key]) accountStocksMap[key] = [];
+        if(accountStocksMap[key].some(s => s.name === name)) return alert('이 계좌에 이미 존재하는 종목명입니다.');
         
-        stocks.push({ name, code });
+        accountStocksMap[key].push({ name, code });
         nameInput.value = '';
         codeInput.value = '';
         
-        renderSelectOptions();
+        renderStockOptions(currentUser, currentAccount);
         document.getElementById('stockSelect').value = name;
         
         saveToLocalStorage();
@@ -858,20 +1100,19 @@
     }
 
     function deleteStock() {
-        const stockSelect = document.getElementById('stockSelect');
-        const targetStockName = stockSelect.value;
+        const currentUser = document.getElementById('userSelect').value;
+        const currentAccount = document.getElementById('accountSelect').value;
+        const targetStockName = document.getElementById('stockSelect').value;
         if (!targetStockName) return alert('삭제할 종목이 없습니다.');
-        if (!confirm(`'${targetStockName}' 종목과 관련된 모든 매매 데이터가 삭제됩니다. 진행하시겠습니까?`)) return;
+        if (!confirm(`해당 계좌의 '${targetStockName}' 종목과 관련된 매매 데이터가 삭제됩니다. 진행하시겠습니까?`)) return;
 
-        users.forEach(u => {
-            localStorage.removeItem(`calculator_seedMoney_${u}_${targetStockName}`);
-        });
+        localStorage.removeItem(`calculator_seedMoney_${currentUser}_${currentAccount}_${targetStockName}`);
 
-        stocks = stocks.filter(s => s.name !== targetStockName);
-        tradeLogs = tradeLogs.filter(log => log.stock !== targetStockName);
-        delete stockPrices[targetStockName];
+        const key = `${currentUser}_${currentAccount}`;
+        accountStocksMap[key] = accountStocksMap[key].filter(s => s.name !== targetStockName);
+        tradeLogs = tradeLogs.filter(log => !(log.user === currentUser && log.account === currentAccount && log.stock === targetStockName));
 
-        renderSelectOptions();
+        renderStockOptions(currentUser, currentAccount);
         saveToLocalStorage();
         loadSeedMoney();
         calculateAll();
@@ -908,13 +1149,16 @@
 
     function handleSubmit() {
         const currentUser = document.getElementById('userSelect').value;
+        const currentAccount = document.getElementById('accountSelect').value;
         const currentStock = document.getElementById('stockSelect').value;
         const date = document.getElementById('tradeDate').value;
         const type = document.getElementById('tradeType').value;
         const price = parseFloat(document.getElementById('tradePrice').value);
         const qty = parseFloat(document.getElementById('tradeQty').value);
 
-        if (!currentUser || !currentStock) return alert('설정 창을 열어 사용자와 종목을 먼저 등록/선택해주세요.');
+        if (!currentUser || !currentAccount || !currentStock) {
+            return alert('데이터 입력창 내부의 선택창을 통해 계좌와 종목을 먼저 지정하거나, 설정 창을 열어 등록해 주세요.');
+        }
         
         if (type === '분배금' && (isNaN(qty) || qty <= 0)) {
             return alert('현재 보유 중인 주식 수량이 없어 분배금을 적용할 수 없습니다.');
@@ -922,11 +1166,18 @@
         
         if (!date || isNaN(price) || isNaN(qty) || price <= 0 || qty <= 0) return alert('올바른 값을 입력해주세요.');
 
+        const newLog = { 
+            user: currentUser, 
+            account: currentAccount, 
+            stock: currentStock, 
+            date, type, price, qty 
+        };
+
         if (editIndex > -1) {
-            tradeLogs[editIndex] = { user: currentUser, stock: currentStock, date, type, price, qty };
+            tradeLogs[editIndex] = newLog;
             editIndex = -1;
         } else {
-            tradeLogs.push({ user: currentUser, stock: currentStock, date, type, price, qty });
+            tradeLogs.push(newLog);
         }
 
         resetForm();
@@ -959,6 +1210,11 @@
         if(!log) return;
 
         editIndex = selectedTargetIndex;
+
+        // 수정할 데이터의 사용자, 계좌, 종목 상태로 동기화 우선 실행
+        handleUserChange(log.user);
+        handleAccountChange(log.account);
+        handleStockChange(log.stock);
 
         document.getElementById('tradeDate').value = log.date;
         document.getElementById('tradeType').value = log.type;
@@ -1101,10 +1357,10 @@
             });
     }
 
-    function calculateCurrentBalance(currentUser, currentStock, seedMoney) {
+    function calculateCurrentBalance(currentUser, currentAccount, currentStock, seedMoney) {
         let currentBalance = seedMoney;
         tradeLogs.forEach(log => {
-            if (log.user === currentUser && log.stock === currentStock) {
+            if (log.user === currentUser && log.account === currentAccount && log.stock === currentStock) {
                 if (log.type === '매수') currentBalance -= (log.price * log.qty);
                 if (log.type === '매도' || log.type === '분배금') currentBalance += (log.price * log.qty);
             }
@@ -1112,7 +1368,6 @@
         document.getElementById('currentBalance').innerText = currentBalance.toLocaleString() + " 원";
     }
 
-    /* 탭 변경 함수 */
     function switchDashboardTab(tabId, btnElement) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
@@ -1121,14 +1376,14 @@
         if(btnElement) btnElement.classList.add('active');
     }
 
-    /* 대시보드 오픈 및 월별 데이터 합산 로직 추가 */
     function openUserDashboard() {
         const currentUser = document.getElementById('userSelect').value;
-        if (!currentUser) return alert('사용자를 먼저 선택해 주세요.');
-
-        document.getElementById('modalTitle').innerText = `👤 [${currentUser}] 보유 현황 및 통계`;
+        const currentAccount = document.getElementById('accountSelect').value;
         
-        // 탭 초기화 (보유 현황으로)
+        if (!currentUser || !currentAccount) return alert('사용자와 계좌를 모두 선택해 주세요.');
+
+        document.getElementById('modalTitle').innerText = `🏦 [${currentUser} - ${currentAccount}] 보유 현황`;
+        
         const firstTabBtn = document.querySelector('.tab-container .tab-btn');
         switchDashboardTab('portfolio', firstTabBtn);
 
@@ -1140,7 +1395,8 @@
         tbodyProfit.innerHTML = '';
         tbodyDividend.innerHTML = '';
 
-        const userStocks = [...new Set(tradeLogs.filter(log => log.user === currentUser).map(log => log.stock))];
+        const accLogs = tradeLogs.filter(log => log.user === currentUser && log.account === currentAccount);
+        const userStocks = [...new Set(accLogs.map(log => log.stock))];
 
         if(userStocks.length === 0) {
             let emptyHtml = `<tr><td colspan="5" class="text-center" style="color:#718096; padding:20px;">매매 내역이 존재하지 않습니다.</td></tr>`;
@@ -1153,21 +1409,18 @@
 
         let calculatedStocksData = [];
         let totalPortfolioPurchaseAmount = 0;
-        let monthlyData = {}; // { "YYYY-MM": { profit: 0, dividend: 0 } }
+        let monthlyData = {};
 
         userStocks.forEach(stockName => {
             let currentQty = 0;
             let currentAvgPrice = 0;
             let totalProfit = 0;
 
-            tradeLogs.forEach(log => {
-                if (log.user !== currentUser || log.stock !== stockName) return;
+            accLogs.forEach(log => {
+                if (log.stock !== stockName) return;
 
-                // 월별 키 생성
                 let monthKey = log.date.substring(0, 7); 
-                if (!monthlyData[monthKey]) {
-                    monthlyData[monthKey] = { profit: 0, dividend: 0 };
-                }
+                if (!monthlyData[monthKey]) monthlyData[monthKey] = { profit: 0, dividend: 0 };
 
                 let tradeAmount = log.price * log.qty;
 
@@ -1179,35 +1432,31 @@
                     if (log.qty <= currentQty) {
                         let profit = (log.price - currentAvgPrice) * log.qty;
                         totalProfit += profit;
-                        monthlyData[monthKey].profit += profit; // 월별 실현손익 누적
+                        monthlyData[monthKey].profit += profit; 
                         currentQty -= log.qty;
                         if (currentQty === 0) currentAvgPrice = 0;
                     }
                 } else if (log.type === '분배금') {
                     totalProfit += tradeAmount;
-                    monthlyData[monthKey].dividend += tradeAmount; // 월별 배당금 누적
+                    monthlyData[monthKey].dividend += tradeAmount; 
                 }
             });
 
             let totalPurchaseAmount = currentAvgPrice * currentQty;
             totalPortfolioPurchaseAmount += totalPurchaseAmount;
 
-            calculatedStocksData.push({
-                stockName, currentQty, currentAvgPrice, totalPurchaseAmount, totalProfit
-            });
+            calculatedStocksData.push({ stockName, currentQty, currentAvgPrice, totalPurchaseAmount, totalProfit });
         });
 
-        // 1. 보유 현황 렌더링
         calculatedStocksData.forEach(data => {
             let profitClass = data.totalProfit > 0 ? "plus" : (data.totalProfit < 0 ? "minus" : "");
             let profitSign = data.totalProfit > 0 ? "+" : "";
 
-            const targetStockObj = stocks.find(s => s.name === data.stockName);
+            const targetStockObj = (accountStocksMap[`${currentUser}_${currentAccount}`] || []).find(s => s.name === data.stockName);
             const codeDisplay = (targetStockObj && targetStockObj.code) ? `(${targetStockObj.code})` : '';
 
             let proportionRate = totalPortfolioPurchaseAmount > 0 
-                ? ((data.totalPurchaseAmount / totalPortfolioPurchaseAmount) * 100).toFixed(1) 
-                : "0.0";
+                ? ((data.totalPurchaseAmount / totalPortfolioPurchaseAmount) * 100).toFixed(1) : "0.0";
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
@@ -1227,17 +1476,12 @@
             tbodyPortfolio.appendChild(tr);
         });
 
-        // 월별 데이터 내림차순 정렬 (최신 월이 위로)
         const sortedMonths = Object.keys(monthlyData).sort((a, b) => b.localeCompare(a));
+        let hasProfit = false, hasDividend = false;
 
-        let hasProfit = false;
-        let hasDividend = false;
-
-        // 2 & 3. 월별 테이블 렌더링
         sortedMonths.forEach(month => {
             let monthData = monthlyData[month];
             
-            // 월별 실현손익
             if(monthData.profit !== 0) {
                 hasProfit = true;
                 let profitClass = monthData.profit > 0 ? "plus" : (monthData.profit < 0 ? "minus" : "");
@@ -1251,7 +1495,6 @@
                 tbodyProfit.appendChild(trP);
             }
 
-            // 월별 배당금
             if(monthData.dividend !== 0) {
                 hasDividend = true;
                 const trD = document.createElement('tr');
@@ -1277,23 +1520,15 @@
 
     function calculateAll() {
         const currentUser = document.getElementById('userSelect').value;
+        const currentAccount = document.getElementById('accountSelect').value;
         const currentStock = document.getElementById('stockSelect').value;
         
-        const activeStockObj = stocks.find(s => s.name === currentStock);
+        const currentStocks = accountStocksMap[`${currentUser}_${currentAccount}`] || [];
+        const activeStockObj = currentStocks.find(s => s.name === currentStock);
         const titleCodeText = (activeStockObj && activeStockObj.code) ? ` (${activeStockObj.code})` : '';
 
-        const quickUserSelect = document.getElementById('quickUserSelect');
-        if (quickUserSelect && quickUserSelect.value !== currentUser) {
-            quickUserSelect.value = currentUser;
-        }
-
-        const quickSelect = document.getElementById('quickStockSelect');
-        if (quickSelect && quickSelect.value !== currentStock) {
-            quickSelect.value = currentStock;
-        }
-
-        if (!currentUser || !currentStock) {
-            document.getElementById('viewTitle').innerHTML = `조회 계좌: [${currentUser || '없음'}]<br>선택 종목: [${currentStock || '없음'}]`;
+        if (!currentUser || !currentAccount || !currentStock) {
+            document.getElementById('viewTitle').innerHTML = `계좌: [${currentUser || '없음'} - ${currentAccount || '없음'}]<br>선택 종목: [${currentStock || '없음'}]`;
             document.getElementById('tradeLogBody').innerHTML = '';
             document.getElementById('currentBalance').innerText = "0 원";
             document.getElementById('totalQuantity').innerText = "0 주";
@@ -1306,7 +1541,7 @@
             return;
         }
 
-        document.getElementById('viewTitle').innerHTML = `조회 계좌: [${currentUser}]<br>선택 종목: [${currentStock}${titleCodeText}]`;
+        document.getElementById('viewTitle').innerHTML = `계좌: [${currentUser} - ${currentAccount}]<br>선택 종목: [${currentStock}${titleCodeText}]`;
 
         if (activeStockObj && activeStockObj.code) {
             fetchCurrentPrice(activeStockObj.code);
@@ -1319,14 +1554,14 @@
         const tbody = document.getElementById('tradeLogBody');
         tbody.innerHTML = ''; 
 
-        calculateCurrentBalance(currentUser, currentStock, seedMoney);
+        calculateCurrentBalance(currentUser, currentAccount, currentStock, seedMoney);
 
         let currentQty = 0;             
         let currentAvgPrice = 0;        
         let totalProfit = 0;            
 
         tradeLogs.forEach((log, globalIndex) => {
-            if (log.user !== currentUser || log.stock !== currentStock) return; 
+            if (log.user !== currentUser || log.account !== currentAccount || log.stock !== currentStock) return; 
 
             let tradeAmount = log.price * log.qty; 
             let errorText = "";
