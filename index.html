@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -313,7 +312,7 @@
         
         .type-buy { color: #e53e3e; font-weight: bold; }
         .type-sell { color: #3182ce; font-weight: bold; }
-        .type-div { color: #38a169; font-weight: bold; } /* 분배금 색상 추가 */
+        .type-div { color: #38a169; font-weight: bold; }
         .plus { color: #e53e3e; font-weight: bold; }
         .minus { color: #3182ce; font-weight: bold; }
         
@@ -347,6 +346,8 @@
             box-sizing: border-box;
             max-height: 90vh;
             overflow-y: auto;
+            display: flex;
+            flex-direction: column;
         }
         .modal-header {
             display: flex;
@@ -361,9 +362,49 @@
             font-weight: bold;
             color: #2b6cb0;
         }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            font-weight: bold;
+            color: #a0aec0;
+            cursor: pointer;
+        }
         .modal-table th, .modal-table td {
             padding: 8px 4px;
             font-size: 12px;
+        }
+
+        /* 모달 탭(Tab) 메뉴 스타일 */
+        .tab-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 10px 15px;
+            font-size: 13px;
+            font-weight: bold;
+            color: #718096;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px; /* 보더 겹침 처리 */
+        }
+        .tab-btn:hover {
+            color: #2b6cb0;
+        }
+        .tab-btn.active {
+            color: #2b6cb0;
+            border-bottom: 3px solid #2b6cb0;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
         }
         
         /* 자산 비중 그래픽 바 스타일 */
@@ -450,7 +491,8 @@
             <select id="tradeType" onchange="toggleInputFields()">
                 <option value="매수">매수</option>
                 <option value="매도">매도</option>
-                <option value="분배금">분배금</option> </select>
+                <option value="분배금">분배금</option>
+            </select>
         </div>
         <div class="form-group">
             <label id="priceLabel" for="tradePrice">매수가 (원)</label>
@@ -500,14 +542,14 @@
             <label>총 실현손익 (해당종목)</label>
             <span id="totalProfit">0 원</span>
         </div>
-<div class="summary-item">
-        <label>매입 비중</label>
-        <span id="purchaseProportion" style="font-size: 16px; font-weight: bold; color: #2b6cb0;">0.0%</span>
-    </div>
-    <div class="summary-item">
-        <label>평가 비중</label>
-        <span id="evalProportion" style="font-size: 16px; font-weight: bold; color: #e53e3e;">0.0%</span>
-    </div>
+        <div class="summary-item">
+            <label>매입 비중</label>
+            <span id="purchaseProportion" style="font-size: 16px; font-weight: bold; color: #2b6cb0;">0.0%</span>
+        </div>
+        <div class="summary-item">
+            <label>평가 비중</label>
+            <span id="evalProportion" style="font-size: 16px; font-weight: bold; color: #e53e3e;">0.0%</span>
+        </div>
     </div>
 
     <div class="quick-select-container">
@@ -543,7 +585,14 @@
             <div class="modal-title" id="modalTitle">사용자 보유 현황</div>
             <button class="modal-close" onclick="closeUserDashboard(null)">×</button>
         </div>
-        <div style="overflow-x: auto;">
+        
+        <div class="tab-container">
+            <button class="tab-btn active" onclick="switchDashboardTab('portfolio', this)">보유 현황</button>
+            <button class="tab-btn" onclick="switchDashboardTab('profit', this)">월별 실현손익</button>
+            <button class="tab-btn" onclick="switchDashboardTab('dividend', this)">월별 배당금</button>
+        </div>
+
+        <div id="tab-portfolio" class="tab-content active" style="overflow-x: auto;">
             <table class="modal-table">
                 <thead>
                     <tr>
@@ -555,6 +604,30 @@
                     </tr>
                 </thead>
                 <tbody id="modalTableBody"></tbody>
+            </table>
+        </div>
+
+        <div id="tab-profit" class="tab-content" style="overflow-x: auto;">
+            <table class="modal-table">
+                <thead>
+                    <tr>
+                        <th style="width: 40%; text-align: center;">월 (Month)</th>
+                        <th style="width: 60%; text-align: center;">월간 실현손익 (매도)</th>
+                    </tr>
+                </thead>
+                <tbody id="modalProfitBody"></tbody>
+            </table>
+        </div>
+
+        <div id="tab-dividend" class="tab-content" style="overflow-x: auto;">
+            <table class="modal-table">
+                <thead>
+                    <tr>
+                        <th style="width: 40%; text-align: center;">월 (Month)</th>
+                        <th style="width: 60%; text-align: center;">월간 총 배당금 (분배금)</th>
+                    </tr>
+                </thead>
+                <tbody id="modalDividendBody"></tbody>
             </table>
         </div>
     </div>
@@ -804,7 +877,6 @@
         calculateAll();
     }
 
-    // [수정됨] 분배금 처리를 위한 인풋 필드 토글 로직 추가
     function toggleInputFields() {
         const type = document.getElementById('tradeType').value;
         const priceLabel = document.getElementById('priceLabel');
@@ -829,13 +901,11 @@
             tradeQty.readOnly = true;
             tradeQty.style.backgroundColor = '#edf2f7';
             if (editIndex === -1) {
-                // 새로운 분배금 입력 시 현재 보유 수량으로 자동 세팅
                 tradeQty.value = globalCalculatedQty;
             }
         }
     }
 
-    // [수정됨] 분배금 예외 처리 추가
     function handleSubmit() {
         const currentUser = document.getElementById('userSelect').value;
         const currentStock = document.getElementById('stockSelect').value;
@@ -883,7 +953,6 @@
         document.getElementById('actionModal').style.display = 'none';
     }
 
-    // [수정됨] 수정을 위해 값 불러올 때 분배금 로직 반영
     function triggerEditFromModal() {
         closeActionModal();
         const log = tradeLogs[selectedTargetIndex];
@@ -896,7 +965,6 @@
         toggleInputFields(); 
         
         document.getElementById('tradePrice').value = log.price;
-        // 토글 함수 실행 후 수량을 덮어씌워서 과거 수량을 유지함
         document.getElementById('tradeQty').value = log.qty; 
         
         const submitBtn = document.getElementById('submitBtn');
@@ -1033,7 +1101,6 @@
             });
     }
 
-    // [수정됨] 분배금 발생 시 잔고에 합산
     function calculateCurrentBalance(currentUser, currentStock, seedMoney) {
         let currentBalance = seedMoney;
         tradeLogs.forEach(log => {
@@ -1045,25 +1112,48 @@
         document.getElementById('currentBalance').innerText = currentBalance.toLocaleString() + " 원";
     }
 
-    // [수정됨] 대시보드에서 총 실현손익에 분배금 합산
+    /* 탭 변경 함수 */
+    function switchDashboardTab(tabId, btnElement) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        
+        document.getElementById(`tab-${tabId}`).classList.add('active');
+        if(btnElement) btnElement.classList.add('active');
+    }
+
+    /* 대시보드 오픈 및 월별 데이터 합산 로직 추가 */
     function openUserDashboard() {
         const currentUser = document.getElementById('userSelect').value;
         if (!currentUser) return alert('사용자를 먼저 선택해 주세요.');
 
-        document.getElementById('modalTitle').innerText = `👤 [${currentUser}] 보유 종목 전체 현황 한눈에 보기`;
-        const tbody = document.getElementById('modalTableBody');
-        tbody.innerHTML = '';
+        document.getElementById('modalTitle').innerText = `👤 [${currentUser}] 보유 현황 및 통계`;
+        
+        // 탭 초기화 (보유 현황으로)
+        const firstTabBtn = document.querySelector('.tab-container .tab-btn');
+        switchDashboardTab('portfolio', firstTabBtn);
+
+        const tbodyPortfolio = document.getElementById('modalTableBody');
+        const tbodyProfit = document.getElementById('modalProfitBody');
+        const tbodyDividend = document.getElementById('modalDividendBody');
+        
+        tbodyPortfolio.innerHTML = '';
+        tbodyProfit.innerHTML = '';
+        tbodyDividend.innerHTML = '';
 
         const userStocks = [...new Set(tradeLogs.filter(log => log.user === currentUser).map(log => log.stock))];
 
         if(userStocks.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" class="text-center" style="color:#718096; padding:20px;">매매 내역이 존재하지 않습니다.</td></tr>`;
+            let emptyHtml = `<tr><td colspan="5" class="text-center" style="color:#718096; padding:20px;">매매 내역이 존재하지 않습니다.</td></tr>`;
+            tbodyPortfolio.innerHTML = emptyHtml;
+            tbodyProfit.innerHTML = emptyHtml;
+            tbodyDividend.innerHTML = emptyHtml;
             document.getElementById('dashboardModal').style.display = 'flex';
             return;
         }
 
         let calculatedStocksData = [];
         let totalPortfolioPurchaseAmount = 0;
+        let monthlyData = {}; // { "YYYY-MM": { profit: 0, dividend: 0 } }
 
         userStocks.forEach(stockName => {
             let currentQty = 0;
@@ -1072,6 +1162,12 @@
 
             tradeLogs.forEach(log => {
                 if (log.user !== currentUser || log.stock !== stockName) return;
+
+                // 월별 키 생성
+                let monthKey = log.date.substring(0, 7); 
+                if (!monthlyData[monthKey]) {
+                    monthlyData[monthKey] = { profit: 0, dividend: 0 };
+                }
 
                 let tradeAmount = log.price * log.qty;
 
@@ -1083,11 +1179,13 @@
                     if (log.qty <= currentQty) {
                         let profit = (log.price - currentAvgPrice) * log.qty;
                         totalProfit += profit;
+                        monthlyData[monthKey].profit += profit; // 월별 실현손익 누적
                         currentQty -= log.qty;
                         if (currentQty === 0) currentAvgPrice = 0;
                     }
                 } else if (log.type === '분배금') {
                     totalProfit += tradeAmount;
+                    monthlyData[monthKey].dividend += tradeAmount; // 월별 배당금 누적
                 }
             });
 
@@ -1099,6 +1197,7 @@
             });
         });
 
+        // 1. 보유 현황 렌더링
         calculatedStocksData.forEach(data => {
             let profitClass = data.totalProfit > 0 ? "plus" : (data.totalProfit < 0 ? "minus" : "");
             let profitSign = data.totalProfit > 0 ? "+" : "";
@@ -1125,8 +1224,47 @@
                 </td>
                 <td class="${profitClass}" style="font-weight:bold;">${profitSign}${data.totalProfit.toLocaleString()} 원</td>
             `;
-            tbody.appendChild(tr);
+            tbodyPortfolio.appendChild(tr);
         });
+
+        // 월별 데이터 내림차순 정렬 (최신 월이 위로)
+        const sortedMonths = Object.keys(monthlyData).sort((a, b) => b.localeCompare(a));
+
+        let hasProfit = false;
+        let hasDividend = false;
+
+        // 2 & 3. 월별 테이블 렌더링
+        sortedMonths.forEach(month => {
+            let monthData = monthlyData[month];
+            
+            // 월별 실현손익
+            if(monthData.profit !== 0) {
+                hasProfit = true;
+                let profitClass = monthData.profit > 0 ? "plus" : (monthData.profit < 0 ? "minus" : "");
+                let profitSign = monthData.profit > 0 ? "+" : "";
+                
+                const trP = document.createElement('tr');
+                trP.innerHTML = `
+                    <td style="text-align: center; font-weight: bold;">${month}</td>
+                    <td class="${profitClass}" style="text-align: right; padding-right: 15px; font-weight: bold;">${profitSign}${monthData.profit.toLocaleString()} 원</td>
+                `;
+                tbodyProfit.appendChild(trP);
+            }
+
+            // 월별 배당금
+            if(monthData.dividend !== 0) {
+                hasDividend = true;
+                const trD = document.createElement('tr');
+                trD.innerHTML = `
+                    <td style="text-align: center; font-weight: bold;">${month}</td>
+                    <td class="type-div" style="text-align: right; padding-right: 15px; font-weight: bold;">+${monthData.dividend.toLocaleString()} 원</td>
+                `;
+                tbodyDividend.appendChild(trD);
+            }
+        });
+
+        if(!hasProfit) tbodyProfit.innerHTML = `<tr><td colspan="2" class="text-center" style="color:#718096; padding:15px;">해당 내역이 없습니다.</td></tr>`;
+        if(!hasDividend) tbodyDividend.innerHTML = `<tr><td colspan="2" class="text-center" style="color:#718096; padding:15px;">해당 내역이 없습니다.</td></tr>`;
 
         document.getElementById('dashboardModal').style.display = 'flex';
     }
@@ -1137,7 +1275,6 @@
         }
     }
 
-    // [수정됨] 전체 계산 로직에 분배금 케이스 추가 및 테이블 출력 형태 적용
     function calculateAll() {
         const currentUser = document.getElementById('userSelect').value;
         const currentStock = document.getElementById('stockSelect').value;
@@ -1211,7 +1348,6 @@
                     if (currentQty === 0) currentAvgPrice = 0;
                 }
             } else if (log.type === '분배금') {
-                // 분배금은 평단가나 보유수량에 영향을 주지 않고 총 실현손익만 증가
                 profit = tradeAmount; 
                 totalProfit += profit;
             }
@@ -1278,7 +1414,6 @@
         globalCalculatedAvgPrice = currentAvgPrice;
         globalCalculatedQty = currentQty;
         
-        // 데이터 입력창이 열려있고 입력 중이 아닐 때 "분배금" 선택 상태라면 수량 자동 동기화
         if (document.getElementById('tradeType').value === '분배금' && editIndex === -1) {
              document.getElementById('tradeQty').value = currentQty;
         }
