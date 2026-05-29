@@ -498,6 +498,14 @@
             <label>총 실현손익 (해당종목)</label>
             <span id="totalProfit">0 원</span>
         </div>
+<div class="summary-item">
+        <label>매입 비중</label>
+        <span id="purchaseProportion" style="font-size: 16px; font-weight: bold; color: #2b6cb0;">0.0%</span>
+    </div>
+    <div class="summary-item">
+        <label>평가 비중</label>
+        <span id="evalProportion" style="font-size: 16px; font-weight: bold; color: #e53e3e;">0.0%</span>
+    </div>
     </div>
 
     <div class="quick-select-container">
@@ -903,23 +911,27 @@
         calculateRealtimeMetrics();
     }
 
-    function calculateRealtimeMetrics() {
-        const currentPriceRaw = document.getElementById('currentPrice').value.replace(/,/g, '');
-        const currentPrice = parseFloat(currentPriceRaw) || 0;
-        
-        const totalPurchaseAmount = globalCalculatedAvgPrice * globalCalculatedQty;
-        const totalEvaluationAmount = currentPrice * globalCalculatedQty;
-        
-        let evaluationProfit = 0;
-        let evaluationProfitRate = 0;
-        
-        if (globalCalculatedQty > 0 && globalCalculatedAvgPrice > 0) {
-            evaluationProfit = totalEvaluationAmount - totalPurchaseAmount;
-            evaluationProfitRate = (evaluationProfit / totalPurchaseAmount) * 100;
-        }
+function calculateRealtimeMetrics() {
+    const currentPriceRaw = document.getElementById('currentPrice').value.replace(/,/g, '');
+    const currentPrice = parseFloat(currentPriceRaw) || 0;
+    
+    // 현재 예수금 가져오기 (콤마 제거 및 숫자로 변환)
+    const currentBalanceRaw = document.getElementById('currentBalance').innerText.replace(/[^0-9]/g, '');
+    const currentBalance = parseFloat(currentBalanceRaw) || 0;
 
-        document.getElementById('totalPurchaseAmount').innerText = totalPurchaseAmount.toLocaleString() + " 원";
-        document.getElementById('totalEvaluationAmount').innerText = totalEvaluationAmount.toLocaleString() + " 원";
+    const totalPurchaseAmount = globalCalculatedAvgPrice * globalCalculatedQty;
+    const totalEvaluationAmount = currentPrice * globalCalculatedQty;
+
+    // 비중 계산: 전체 자산(투자금 + 예수금) 대비
+    const totalAssetPurchase = totalPurchaseAmount + currentBalance;
+    const totalAssetEval = totalEvaluationAmount + currentBalance;
+
+    const purRate = totalAssetPurchase > 0 ? ((totalPurchaseAmount / totalAssetPurchase) * 100).toFixed(1) : 0;
+    const evalRate = totalAssetEval > 0 ? ((totalEvaluationAmount / totalAssetEval) * 100).toFixed(1) : 0;
+
+    // UI 업데이트 (비율만 표시)
+    document.getElementById('purchaseProportion').innerText = `${purRate}%`;
+    document.getElementById('evalProportion').innerText = `${evalRate}%`;
         
         const currentPriceInput = document.getElementById('currentPrice');
         if (currentPrice === 0 || globalCalculatedQty === 0) {
