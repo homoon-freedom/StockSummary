@@ -915,45 +915,53 @@ function calculateRealtimeMetrics() {
     const currentPriceRaw = document.getElementById('currentPrice').value.replace(/,/g, '');
     const currentPrice = parseFloat(currentPriceRaw) || 0;
     
-    // 현재 예수금 가져오기 (콤마 제거 및 숫자로 변환)
+    // 현재 예수금 가져오기
     const currentBalanceRaw = document.getElementById('currentBalance').innerText.replace(/[^0-9]/g, '');
     const currentBalance = parseFloat(currentBalanceRaw) || 0;
 
+    // 1. 기본 계산 (전역 변수 활용)
     const totalPurchaseAmount = globalCalculatedAvgPrice * globalCalculatedQty;
     const totalEvaluationAmount = currentPrice * globalCalculatedQty;
+    const evaluationProfit = totalEvaluationAmount - totalPurchaseAmount;
+    const evaluationProfitRate = totalPurchaseAmount > 0 ? (evaluationProfit / totalPurchaseAmount) * 100 : 0;
 
-    // 비중 계산: 전체 자산(투자금 + 예수금) 대비
+    // 2. UI 업데이트: 총 매입/평가 금액
+    document.getElementById('totalPurchaseAmount').innerText = totalPurchaseAmount.toLocaleString() + " 원";
+    document.getElementById('totalEvaluationAmount').innerText = totalEvaluationAmount.toLocaleString() + " 원";
+
+    // 3. 비중 계산 (투자금 + 예수금 대비)
     const totalAssetPurchase = totalPurchaseAmount + currentBalance;
     const totalAssetEval = totalEvaluationAmount + currentBalance;
 
     const purRate = totalAssetPurchase > 0 ? ((totalPurchaseAmount / totalAssetPurchase) * 100).toFixed(1) : 0;
     const evalRate = totalAssetEval > 0 ? ((totalEvaluationAmount / totalAssetEval) * 100).toFixed(1) : 0;
 
-    // UI 업데이트 (비율만 표시)
     document.getElementById('purchaseProportion').innerText = `${purRate}%`;
     document.getElementById('evalProportion').innerText = `${evalRate}%`;
         
-        const currentPriceInput = document.getElementById('currentPrice');
-        if (currentPrice === 0 || globalCalculatedQty === 0) {
-            currentPriceInput.style.color = "#333";
-        } else if (currentPrice > globalCalculatedAvgPrice) {
-            currentPriceInput.style.color = "#e53e3e";
-        } else if (currentPrice < globalCalculatedAvgPrice) {
-            currentPriceInput.style.color = "#3182ce";
-        } else {
-            currentPriceInput.style.color = "#333";
-        }
-
-        const evalProfitSpan = document.getElementById('evaluationProfit');
-        if (currentPrice === 0 || globalCalculatedQty === 0) {
-            evalProfitSpan.innerText = "0 원 (0.00%)";
-            evalProfitSpan.className = "";
-        } else {
-            let sign = evaluationProfit > 0 ? "+" : "";
-            evalProfitSpan.innerText = `${sign}${evaluationProfit.toLocaleString()} 원 (${sign}${evaluationProfitRate.toFixed(2)}%)`;
-            evalProfitSpan.className = evaluationProfit > 0 ? "plus" : (evaluationProfit < 0 ? "minus" : "");
-        }
+    // 4. 현재가 스타일 업데이트
+    const currentPriceInput = document.getElementById('currentPrice');
+    if (currentPrice === 0 || globalCalculatedQty === 0) {
+        currentPriceInput.style.color = "#333";
+    } else if (currentPrice > globalCalculatedAvgPrice) {
+        currentPriceInput.style.color = "#e53e3e";
+    } else if (currentPrice < globalCalculatedAvgPrice) {
+        currentPriceInput.style.color = "#3182ce";
+    } else {
+        currentPriceInput.style.color = "#333";
     }
+
+    // 5. 평가손익 UI 업데이트
+    const evalProfitSpan = document.getElementById('evaluationProfit');
+    if (currentPrice === 0 || globalCalculatedQty === 0) {
+        evalProfitSpan.innerText = "0 원 (0.00%)";
+        evalProfitSpan.className = "";
+    } else {
+        let sign = evaluationProfit > 0 ? "+" : "";
+        evalProfitSpan.innerText = `${sign}${evaluationProfit.toLocaleString()} 원 (${sign}${evaluationProfitRate.toFixed(2)}%)`;
+        evalProfitSpan.className = evaluationProfit > 0 ? "plus" : (evaluationProfit < 0 ? "minus" : "");
+    }
+}
 
     function fetchCurrentPrice(stockCode) {
         if (!stockCode) return;
