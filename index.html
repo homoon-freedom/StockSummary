@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -312,6 +313,7 @@
         
         .type-buy { color: #e53e3e; font-weight: bold; }
         .type-sell { color: #3182ce; font-weight: bold; }
+        .type-div { color: #38a169; font-weight: bold; } /* 분배금 색상 추가 */
         .plus { color: #e53e3e; font-weight: bold; }
         .minus { color: #3182ce; font-weight: bold; }
         
@@ -448,7 +450,7 @@
             <select id="tradeType" onchange="toggleInputFields()">
                 <option value="매수">매수</option>
                 <option value="매도">매도</option>
-            </select>
+                <option value="분배금">분배금</option> </select>
         </div>
         <div class="form-group">
             <label id="priceLabel" for="tradePrice">매수가 (원)</label>
@@ -603,7 +605,6 @@
         const currentStock = document.getElementById('stockSelect').value;
         if (!currentUser || !currentStock) return;
         const seedMoney = document.getElementById('seedMoney').value;
-        // 사용자명과 종목명을 결합한 고유 키값 생성
         localStorage.setItem(`calculator_seedMoney_${currentUser}_${currentStock}`, seedMoney);
     }
 
@@ -749,7 +750,6 @@
         if (!targetUser) return alert('삭제할 사용자가 없습니다.');
         if (!confirm(`'${targetUser}' 사용자와 해당 사용자의 모든 매매 내역 및 설정 씨드머니가 삭제됩니다. 진행하시겠습니까?`)) return;
 
-        // 기존 설정 데이터 청소
         stocks.forEach(s => {
             localStorage.removeItem(`calculator_seedMoney_${targetUser}_${s.name}`);
         });
@@ -804,14 +804,38 @@
         calculateAll();
     }
 
+    // [수정됨] 분배금 처리를 위한 인풋 필드 토글 로직 추가
     function toggleInputFields() {
         const type = document.getElementById('tradeType').value;
         const priceLabel = document.getElementById('priceLabel');
         const qtyLabel = document.getElementById('qtyLabel');
-        priceLabel.innerText = type === '매수' ? '매수가 (원)' : '매도가 (원)';
-        qtyLabel.innerText = type === '매수' ? '체결수량 (주)' : '매도수량 (주)';
+        const tradeQty = document.getElementById('tradeQty');
+
+        if (type === '매수') {
+            priceLabel.innerText = '매수가 (원)';
+            qtyLabel.innerText = '체결수량 (주)';
+            tradeQty.readOnly = false;
+            tradeQty.style.backgroundColor = '#fff';
+            if (editIndex === -1 && tradeQty.readOnly) tradeQty.value = '';
+        } else if (type === '매도') {
+            priceLabel.innerText = '매도가 (원)';
+            qtyLabel.innerText = '매도수량 (주)';
+            tradeQty.readOnly = false;
+            tradeQty.style.backgroundColor = '#fff';
+            if (editIndex === -1 && tradeQty.readOnly) tradeQty.value = '';
+        } else if (type === '분배금') {
+            priceLabel.innerText = '주당분배금 (원)';
+            qtyLabel.innerText = '적용수량 (현재보유주식수)';
+            tradeQty.readOnly = true;
+            tradeQty.style.backgroundColor = '#edf2f7';
+            if (editIndex === -1) {
+                // 새로운 분배금 입력 시 현재 보유 수량으로 자동 세팅
+                tradeQty.value = globalCalculatedQty;
+            }
+        }
     }
 
+    // [수정됨] 분배금 예외 처리 추가
     function handleSubmit() {
         const currentUser = document.getElementById('userSelect').value;
         const currentStock = document.getElementById('stockSelect').value;
@@ -821,6 +845,11 @@
         const qty = parseFloat(document.getElementById('tradeQty').value);
 
         if (!currentUser || !currentStock) return alert('설정 창을 열어 사용자와 종목을 먼저 등록/선택해주세요.');
+        
+        if (type === '분배금' && (isNaN(qty) || qty <= 0)) {
+            return alert('현재 보유 중인 주식 수량이 없어 분배금을 적용할 수 없습니다.');
+        }
+        
         if (!date || isNaN(price) || isNaN(qty) || price <= 0 || qty <= 0) return alert('올바른 값을 입력해주세요.');
 
         if (editIndex > -1) {
@@ -840,9 +869,11 @@
         const log = tradeLogs[globalIndex];
         if(!log) return;
         
+        let displayLabel = log.type === '분배금' ? '주당분배금' : '체결가';
+        
         document.getElementById('actionModalDesc').innerHTML = `
             <strong>${log.date} [${log.type}]</strong><br>
-            체결가: ${log.price.toLocaleString()}원 / 수량: ${log.qty.toLocaleString()}주<br><br>
+            ${displayLabel}: ${log.price.toLocaleString()}원 / 수량: ${log.qty.toLocaleString()}주<br><br>
             수행할 작업을 선택하세요.
         `;
         document.getElementById('actionModal').style.display = 'flex';
@@ -852,6 +883,7 @@
         document.getElementById('actionModal').style.display = 'none';
     }
 
+    // [수정됨] 수정을 위해 값 불러올 때 분배금 로직 반영
     function triggerEditFromModal() {
         closeActionModal();
         const log = tradeLogs[selectedTargetIndex];
@@ -861,10 +893,11 @@
 
         document.getElementById('tradeDate').value = log.date;
         document.getElementById('tradeType').value = log.type;
+        toggleInputFields(); 
+        
         document.getElementById('tradePrice').value = log.price;
-        document.getElementById('tradeQty').value = log.qty;
-
-        toggleInputFields();
+        // 토글 함수 실행 후 수량을 덮어씌워서 과거 수량을 유지함
+        document.getElementById('tradeQty').value = log.qty; 
         
         const submitBtn = document.getElementById('submitBtn');
         submitBtn.innerText = "내역 수정 완료";
@@ -880,7 +913,7 @@
             alert('현재 수정 중인 내역은 삭제할 수 없습니다. 수정을 완료한 뒤 진행해주세요.');
             return;
         }
-        if(!confirm("선택하신 매매 내역을 정말 삭제하시겠습니까?")) return;
+        if(!confirm("선택하신 내역을 정말 삭제하시겠습니까?")) return;
         
         tradeLogs.splice(selectedTargetIndex, 1);
         if (editIndex > selectedTargetIndex) editIndex--; 
@@ -911,57 +944,51 @@
         calculateRealtimeMetrics();
     }
 
-function calculateRealtimeMetrics() {
-    const currentPriceRaw = document.getElementById('currentPrice').value.replace(/,/g, '');
-    const currentPrice = parseFloat(currentPriceRaw) || 0;
-    
-    // 현재 예수금 가져오기
-    const currentBalanceRaw = document.getElementById('currentBalance').innerText.replace(/[^0-9]/g, '');
-    const currentBalance = parseFloat(currentBalanceRaw) || 0;
-
-    // 1. 기본 계산 (전역 변수 활용)
-    const totalPurchaseAmount = globalCalculatedAvgPrice * globalCalculatedQty;
-    const totalEvaluationAmount = currentPrice * globalCalculatedQty;
-    const evaluationProfit = totalEvaluationAmount - totalPurchaseAmount;
-    const evaluationProfitRate = totalPurchaseAmount > 0 ? (evaluationProfit / totalPurchaseAmount) * 100 : 0;
-
-    // 2. UI 업데이트: 총 매입/평가 금액
-    document.getElementById('totalPurchaseAmount').innerText = totalPurchaseAmount.toLocaleString() + " 원";
-    document.getElementById('totalEvaluationAmount').innerText = totalEvaluationAmount.toLocaleString() + " 원";
-
-    // 3. 비중 계산 (투자금 + 예수금 대비)
-    const totalAssetPurchase = totalPurchaseAmount + currentBalance;
-    const totalAssetEval = totalEvaluationAmount + currentBalance;
-
-    const purRate = totalAssetPurchase > 0 ? ((totalPurchaseAmount / totalAssetPurchase) * 100).toFixed(1) : 0;
-    const evalRate = totalAssetEval > 0 ? ((totalEvaluationAmount / totalAssetEval) * 100).toFixed(1) : 0;
-
-    document.getElementById('purchaseProportion').innerText = `${purRate}%`;
-    document.getElementById('evalProportion').innerText = `${evalRate}%`;
+    function calculateRealtimeMetrics() {
+        const currentPriceRaw = document.getElementById('currentPrice').value.replace(/,/g, '');
+        const currentPrice = parseFloat(currentPriceRaw) || 0;
         
-    // 4. 현재가 스타일 업데이트
-    const currentPriceInput = document.getElementById('currentPrice');
-    if (currentPrice === 0 || globalCalculatedQty === 0) {
-        currentPriceInput.style.color = "#333";
-    } else if (currentPrice > globalCalculatedAvgPrice) {
-        currentPriceInput.style.color = "#e53e3e";
-    } else if (currentPrice < globalCalculatedAvgPrice) {
-        currentPriceInput.style.color = "#3182ce";
-    } else {
-        currentPriceInput.style.color = "#333";
-    }
+        const currentBalanceRaw = document.getElementById('currentBalance').innerText.replace(/[^0-9]/g, '');
+        const currentBalance = parseFloat(currentBalanceRaw) || 0;
 
-    // 5. 평가손익 UI 업데이트
-    const evalProfitSpan = document.getElementById('evaluationProfit');
-    if (currentPrice === 0 || globalCalculatedQty === 0) {
-        evalProfitSpan.innerText = "0 원 (0.00%)";
-        evalProfitSpan.className = "";
-    } else {
-        let sign = evaluationProfit > 0 ? "+" : "";
-        evalProfitSpan.innerText = `${sign}${evaluationProfit.toLocaleString()} 원 (${sign}${evaluationProfitRate.toFixed(2)}%)`;
-        evalProfitSpan.className = evaluationProfit > 0 ? "plus" : (evaluationProfit < 0 ? "minus" : "");
+        const totalPurchaseAmount = globalCalculatedAvgPrice * globalCalculatedQty;
+        const totalEvaluationAmount = currentPrice * globalCalculatedQty;
+        const evaluationProfit = totalEvaluationAmount - totalPurchaseAmount;
+        const evaluationProfitRate = totalPurchaseAmount > 0 ? (evaluationProfit / totalPurchaseAmount) * 100 : 0;
+
+        document.getElementById('totalPurchaseAmount').innerText = totalPurchaseAmount.toLocaleString() + " 원";
+        document.getElementById('totalEvaluationAmount').innerText = totalEvaluationAmount.toLocaleString() + " 원";
+
+        const totalAssetPurchase = totalPurchaseAmount + currentBalance;
+        const totalAssetEval = totalEvaluationAmount + currentBalance;
+
+        const purRate = totalAssetPurchase > 0 ? ((totalPurchaseAmount / totalAssetPurchase) * 100).toFixed(1) : 0;
+        const evalRate = totalAssetEval > 0 ? ((totalEvaluationAmount / totalAssetEval) * 100).toFixed(1) : 0;
+
+        document.getElementById('purchaseProportion').innerText = `${purRate}%`;
+        document.getElementById('evalProportion').innerText = `${evalRate}%`;
+            
+        const currentPriceInput = document.getElementById('currentPrice');
+        if (currentPrice === 0 || globalCalculatedQty === 0) {
+            currentPriceInput.style.color = "#333";
+        } else if (currentPrice > globalCalculatedAvgPrice) {
+            currentPriceInput.style.color = "#e53e3e";
+        } else if (currentPrice < globalCalculatedAvgPrice) {
+            currentPriceInput.style.color = "#3182ce";
+        } else {
+            currentPriceInput.style.color = "#333";
+        }
+
+        const evalProfitSpan = document.getElementById('evaluationProfit');
+        if (currentPrice === 0 || globalCalculatedQty === 0) {
+            evalProfitSpan.innerText = "0 원 (0.00%)";
+            evalProfitSpan.className = "";
+        } else {
+            let sign = evaluationProfit > 0 ? "+" : "";
+            evalProfitSpan.innerText = `${sign}${evaluationProfit.toLocaleString()} 원 (${sign}${evaluationProfitRate.toFixed(2)}%)`;
+            evalProfitSpan.className = evaluationProfit > 0 ? "plus" : (evaluationProfit < 0 ? "minus" : "");
+        }
     }
-}
 
     function fetchCurrentPrice(stockCode) {
         if (!stockCode) return;
@@ -1006,18 +1033,19 @@ function calculateRealtimeMetrics() {
             });
     }
 
-    // 종목별 계산 구조에 맞게 예수금 연동 계산 수정
+    // [수정됨] 분배금 발생 시 잔고에 합산
     function calculateCurrentBalance(currentUser, currentStock, seedMoney) {
         let currentBalance = seedMoney;
         tradeLogs.forEach(log => {
             if (log.user === currentUser && log.stock === currentStock) {
                 if (log.type === '매수') currentBalance -= (log.price * log.qty);
-                if (log.type === '매도') currentBalance += (log.price * log.qty);
+                if (log.type === '매도' || log.type === '분배금') currentBalance += (log.price * log.qty);
             }
         });
         document.getElementById('currentBalance').innerText = currentBalance.toLocaleString() + " 원";
     }
 
+    // [수정됨] 대시보드에서 총 실현손익에 분배금 합산
     function openUserDashboard() {
         const currentUser = document.getElementById('userSelect').value;
         if (!currentUser) return alert('사용자를 먼저 선택해 주세요.');
@@ -1058,6 +1086,8 @@ function calculateRealtimeMetrics() {
                         currentQty -= log.qty;
                         if (currentQty === 0) currentAvgPrice = 0;
                     }
+                } else if (log.type === '분배금') {
+                    totalProfit += tradeAmount;
                 }
             });
 
@@ -1107,6 +1137,7 @@ function calculateRealtimeMetrics() {
         }
     }
 
+    // [수정됨] 전체 계산 로직에 분배금 케이스 추가 및 테이블 출력 형태 적용
     function calculateAll() {
         const currentUser = document.getElementById('userSelect').value;
         const currentStock = document.getElementById('stockSelect').value;
@@ -1151,7 +1182,6 @@ function calculateRealtimeMetrics() {
         const tbody = document.getElementById('tradeLogBody');
         tbody.innerHTML = ''; 
 
-        // 대시보드 계산 단계에서 유저와 종목을 함께 넘기도록 수정
         calculateCurrentBalance(currentUser, currentStock, seedMoney);
 
         let currentQty = 0;             
@@ -1180,25 +1210,35 @@ function calculateRealtimeMetrics() {
                     currentQty -= log.qty;
                     if (currentQty === 0) currentAvgPrice = 0;
                 }
+            } else if (log.type === '분배금') {
+                // 분배금은 평단가나 보유수량에 영향을 주지 않고 총 실현손익만 증가
+                profit = tradeAmount; 
+                totalProfit += profit;
             }
 
             let profitClass = "";
             let profitDisplay = "";
+            
             if (log.type === '매도' && errorText === "") {
                 let formattedProfit = profit.toLocaleString() + " 원";
                 if (profit > 0) { profitClass = "plus"; formattedProfit = "+" + formattedProfit; }
                 else if (profit < 0) { profitClass = "minus"; }
                 profitDisplay = `<span class="${profitClass}" style="font-weight:bold; font-size:12px;">${formattedProfit}<br>(${profitRate})</span>`;
+            } else if (log.type === '분배금') {
+                let formattedProfit = "+" + profit.toLocaleString() + " 원";
+                profitDisplay = `<span class="type-div" style="font-weight:bold; font-size:12px;">${formattedProfit}<br>(지급완료)</span>`;
             }
 
             const trMain = document.createElement('tr');
             trMain.className = "row-main";
             
+            let typeColorClass = log.type === '매수' ? 'type-buy' : (log.type === '매도' ? 'type-sell' : 'type-div');
+
             trMain.innerHTML = `
                 <td class="col-1 clickable-date" onclick="showActionModal(${globalIndex})">${log.date}</td>
-                <td class="col-2 ${log.type === '매수' ? 'type-buy' : 'type-sell'}" style="font-size:14px; vertical-align:middle;">${log.type}</td>
+                <td class="col-2 ${typeColorClass}" style="font-size:14px; vertical-align:middle;">${log.type}</td>
                 <td class="col-3">
-                    <span class="lbl-desc">정산 금액</span>
+                    <span class="lbl-desc">${log.type === '분배금' ? '총 분배금' : '정산 금액'}</span>
                     <span class="val-data">${tradeAmount.toLocaleString()} 원</span>
                 </td>
             `;
@@ -1214,12 +1254,12 @@ function calculateRealtimeMetrics() {
                     <span class="val-data" style="color:#4a5568;">${avgPriceText}<br>${currentQty.toLocaleString()}주</span>
                 </td>
                 <td class="col-2" style="border-top:none; text-align: center;">
-                    <span class="lbl-desc">체결가 / 수량</span>
+                    <span class="lbl-desc">${log.type === '분배금' ? '주당분배 / 수량' : '체결가 / 수량'}</span>
                     <span class="val-data" style="color:#718096;">${log.price.toLocaleString()}원<br>${log.qty.toLocaleString()}주</span>
                 </td>
                 <td class="col-3" style="border-top:none;">
                     <div style="text-align:right;">
-                        ${profitDisplay ? `<span class="lbl-desc">매도 손익</span>${profitDisplay}` : '<span class="lbl-desc" style="color:#cbd5e0;">-</span>'}
+                        ${profitDisplay ? `<span class="lbl-desc">${log.type === '분배금' ? '분배 손익' : '매도 손익'}</span>${profitDisplay}` : '<span class="lbl-desc" style="color:#cbd5e0;">-</span>'}
                     </div>
                 </td>
             `;
@@ -1237,6 +1277,12 @@ function calculateRealtimeMetrics() {
 
         globalCalculatedAvgPrice = currentAvgPrice;
         globalCalculatedQty = currentQty;
+        
+        // 데이터 입력창이 열려있고 입력 중이 아닐 때 "분배금" 선택 상태라면 수량 자동 동기화
+        if (document.getElementById('tradeType').value === '분배금' && editIndex === -1) {
+             document.getElementById('tradeQty').value = currentQty;
+        }
+
         calculateRealtimeMetrics();
     }
 </script>
