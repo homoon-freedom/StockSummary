@@ -1190,34 +1190,39 @@
         calculateAll();
     }
 
-    function toggleInputFields() {
-        const type = document.getElementById('tradeType').value;
-        const priceLabel = document.getElementById('priceLabel');
-        const qtyLabel = document.getElementById('qtyLabel');
-        const tradeQty = document.getElementById('tradeQty');
+function toggleInputFields() {
+    const type = document.getElementById('tradeType').value;
+    const priceLabel = document.getElementById('priceLabel');
+    const qtyLabel = document.getElementById('qtyLabel');
+    const tradeQty = document.getElementById('tradeQty');
 
-        if (type === '매수') {
-            priceLabel.innerText = '매수가 (원)';
-            qtyLabel.innerText = '체결수량 (주)';
-            tradeQty.readOnly = false;
-            tradeQty.style.backgroundColor = '#fff';
-            if (editIndex === -1 && tradeQty.readOnly) tradeQty.value = '';
-        } else if (type === '매도') {
-            priceLabel.innerText = '매도가 (원)';
-            qtyLabel.innerText = '매도수량 (주)';
-            tradeQty.readOnly = false;
-            tradeQty.style.backgroundColor = '#fff';
-            if (editIndex === -1 && tradeQty.readOnly) tradeQty.value = '';
-        } else if (type === '분배금') {
-            priceLabel.innerText = '주당분배금 (원)';
-            qtyLabel.innerText = '적용수량 (현재보유주식수)';
-            tradeQty.readOnly = true;
-            tradeQty.style.backgroundColor = '#edf2f7';
-            if (editIndex === -1) {
-                tradeQty.value = globalCalculatedQty;
-            }
+    if (type === '매수') {
+        priceLabel.innerText = '매수가 (원)';
+        qtyLabel.innerText = '체결수량 (주)';
+        tradeQty.readOnly = false; // 수정 가능
+        tradeQty.style.backgroundColor = '#fff';
+    } else if (type === '매도') {
+        priceLabel.innerText = '매도가 (원)';
+        qtyLabel.innerText = '매도수량 (주)';
+        tradeQty.readOnly = false; // 수정 가능
+        tradeQty.style.backgroundColor = '#fff';
+    } else if (type === '분배금') {
+        priceLabel.innerText = '주당분배금 (원)';
+        qtyLabel.innerText = '적용수량 (주)';
+        
+        // [수정 포인트] readOnly를 false로 변경하여 수동 입력 허용
+        tradeQty.readOnly = false; 
+        tradeQty.style.backgroundColor = '#fff'; 
+        
+        // 기존: 분배금 선택 시 현재 보유 수량으로 자동 채워짐
+        // 만약 수동 입력이 기본이길 원하시면 아래 조건문을 제거하거나 
+        // editIndex가 아닐 때만 자동 채워지도록 설정합니다.
+        if (editIndex === -1 && (tradeQty.value === "" || tradeQty.value === "0")) {
+            tradeQty.value = globalCalculatedQty;
         }
     }
+}
+
 
     function handleSubmit() {
         const currentUser = document.getElementById('userSelect').value;
