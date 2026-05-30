@@ -61,6 +61,15 @@
     </style>
 </head>
 <body>
+<div class="container">
+    <h2>주식 매매 내역 및 평단가 계산기</h2>
+    <button class="btn-toggle btn-toggle-config" onclick="toggleConfigSection()"><span id="configIcon">⚙️</span> <span id="configText">사용자/계좌/종목 설정 열기</span></button>
+    
+    <div class="config-section" id="configSection">
+        <div class="config-row-group">
+            <div class="config-box"><div class="title-label">👤 사용자 관리</div><div class="config-group"><label>등록된 사용자 리스트</label><select id="userSelect" onchange="handleUserChange(this.value)"></select></div><button class="btn-full btn-del" onclick="deleteUser()">선택된 사용자 삭제</button><div class="config-group" style="margin-top:10px;"><label>새로 추가할 사용자 이름</label><input type="text" id="newUserName" placeholder="예: 홍길동"></div><button class="btn-full btn-add" onclick="addUser()">새 사용자 등록</button></div>
+            <div class="config-box"><div class="title-label">🏦 계좌 관리 (현재 사용자 전용)</div><div class="config-group"><label>등록된 계좌 리스트</label><select id="accountSelect" onchange="handleAccountChange(this.value)"></select></div><button class="btn-full btn-del" onclick="deleteAccount()">선택된 계좌 삭제</button><div class="config-group" style="margin-top:10px;"><label>새로 추가할 계좌명</label><input type="text" id="newAccountName" placeholder="예: ISA계좌, 연금저축"></div><button class="btn-full btn-add" onclick="addAccount()">새 계좌 등록</button></div>
+        </div>
 <div class="config-box">
     <div class="title-label">📈 종목 관리 (현재 계좌 전용)</div>
     <div class="config-group">
@@ -81,16 +90,6 @@
     </div>
     <button class="btn-full btn-add" style="margin-top:5px;" onclick="addStock()">등록/수정사항 저장</button>
 </div>
-<div class="container">
-    <h2>주식 매매 내역 및 평단가 계산기</h2>
-    <button class="btn-toggle btn-toggle-config" onclick="toggleConfigSection()"><span id="configIcon">⚙️</span> <span id="configText">사용자/계좌/종목 설정 열기</span></button>
-    
-    <div class="config-section" id="configSection">
-        <div class="config-row-group">
-            <div class="config-box"><div class="title-label">👤 사용자 관리</div><div class="config-group"><label>등록된 사용자 리스트</label><select id="userSelect" onchange="handleUserChange(this.value)"></select></div><button class="btn-full btn-del" onclick="deleteUser()">선택된 사용자 삭제</button><div class="config-group" style="margin-top:10px;"><label>새로 추가할 사용자 이름</label><input type="text" id="newUserName" placeholder="예: 홍길동"></div><button class="btn-full btn-add" onclick="addUser()">새 사용자 등록</button></div>
-            <div class="config-box"><div class="title-label">🏦 계좌 관리 (현재 사용자 전용)</div><div class="config-group"><label>등록된 계좌 리스트</label><select id="accountSelect" onchange="handleAccountChange(this.value)"></select></div><button class="btn-full btn-del" onclick="deleteAccount()">선택된 계좌 삭제</button><div class="config-group" style="margin-top:10px;"><label>새로 추가할 계좌명</label><input type="text" id="newAccountName" placeholder="예: ISA계좌, 연금저축"></div><button class="btn-full btn-add" onclick="addAccount()">새 계좌 등록</button></div>
-        </div>
-        <div class="config-box"><div class="title-label">📈 종목 관리 (현재 계좌 전용)</div><div class="config-group"><label>등록된 종목 리스트</label><select id="stockSelect" onchange="handleStockChange(this.value)"></select></div><button class="btn-full btn-del" onclick="deleteStock()">선택된 종목 삭제</button><div class="config-group" style="margin-top:5px;"><label>새로 추가할 종목명</label><input type="text" id="newStockName" placeholder="예: 삼성전자"></div><div class="config-group" style="margin-top:5px;"><label>새로 추가할 종목코드</label><input type="text" id="newStockCode" placeholder="예: 005930"></div><button class="btn-full btn-add" style="margin-top:5px;" onclick="addStock()">새 종목 등록</button></div>
     </div>
 
     <button class="btn-toggle btn-toggle-input" onclick="toggleInputSection()"><span id="inputIcon">🔽</span> <span id="inputText">매매 데이터 입력창 열기</span></button>
