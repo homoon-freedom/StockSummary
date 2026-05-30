@@ -90,18 +90,19 @@
     </div>
 
     <div class="summary-box">
-        <div class="summary-item"><label>종목별 씨드머니 (원)</label><input type="text" id="seedMoney" value="10,000,000" oninput="formatInputValue(this); saveSeedMoney(); calculateAll();"></div>
-        <div class="summary-item"><label>현재 잔고 (해당종목 예수금)</label><span id="currentBalance">0 원</span></div>
-        <div class="summary-item"><label>보유 수량</label><span id="totalQuantity">0 주</span></div>
-        <div class="summary-item"><label>현재 평단가</label><span id="avgPrice">0 원</span></div>
+        <div class="summary-item"><label>계좌별 씨드머니 (원)</label><input type="text" id="seedMoney" value="10,000,000" oninput="formatInputValue(this); saveSeedMoney(); calculateAll();"></div>
+        <div class="summary-item"><label>계좌 총 매입금액</label><span id="accountTotalPurchaseAmount" style="color:#2b6cb0; font-weight:bold;">0 원</span></div>
+        <div class="summary-item"><label>계좌 예수금 (잔여 현금)</label><span id="currentBalance">0 원</span></div>
+        <div class="summary-item"><label>해당 종목 보유 수량</label><span id="totalQuantity">0 주</span></div>
+        <div class="summary-item"><label>해당 종목 평단가</label><span id="avgPrice">0 원</span></div>
         <div class="summary-item input-highlight"><label>📊 현재가 입력 (원)</label><input type="text" id="currentPrice" placeholder="조회 중..." oninput="formatInputValue(this); updateStockPriceMap();"></div>
-        <div class="summary-item"><label>총 매입금액</label><span id="totalPurchaseAmount">0 원</span></div>
-        <div class="summary-item"><label>총 평가금액</label><span id="totalEvaluationAmount">0 원</span></div>
+        <div class="summary-item"><label>해당종목 매입금액</label><span id="totalPurchaseAmount">0 원</span></div>
+        <div class="summary-item"><label>해당종목 평가금액</label><span id="totalEvaluationAmount">0 원</span></div>
         <div class="summary-item"><label>평가손익 (수익률)</label><span id="evaluationProfit">0 원 (0.00%)</span></div>
         <div class="summary-item"><label>총 실현손익 (해당종목)</label><span id="totalProfit">0 원</span></div>
         <div class="summary-item"><label>총 배당금 (해당종목)</label><span id="totalDividend" style="color:#38a169;font-weight:bold;">0 원</span></div>
-        <div class="summary-item"><label>매입 비중</label><span id="purchaseProportion" style="font-size:16px;font-weight:bold;color:#2b6cb0;">0.0%</span></div>
-        <div class="summary-item"><label>평가 비중</label><span id="evalProportion" style="font-size:16px;font-weight:bold;color:#e53e3e;">0.0%</span></div>
+        <div class="summary-item"><label>매입 비중 (계좌대비)</label><span id="purchaseProportion" style="font-size:16px;font-weight:bold;color:#2b6cb0;">0.0%</span></div>
+        <div class="summary-item"><label>평가 비중 (계좌대비)</label><span id="evalProportion" style="font-size:16px;font-weight:bold;color:#e53e3e;">0.0%</span></div>
     </div>
 
     <div class="quick-select-container">
@@ -156,8 +157,8 @@ style="width:15%;">정산금액</th><th style="width:12%;">평단가</th><th sty
 
     window.onload = function() { document.getElementById('tradeDate').value = new Date().toISOString().substring(0, 10); loadFromLocalStorage(); renderSelectOptions(); loadSeedMoney(); calculateAll(); };
     function saveToLocalStorage() { localStorage.setItem('calculator_users', JSON.stringify(users)); localStorage.setItem('calculator_userAccountsMap', JSON.stringify(userAccountsMap)); localStorage.setItem('calculator_accountStocksMap', JSON.stringify(accountStocksMap)); localStorage.setItem('calculator_tradeLogs', JSON.stringify(tradeLogs)); localStorage.setItem('calculator_stockPrices', JSON.stringify(stockPrices)); }
-    function saveSeedMoney() { const u=document.getElementById('userSelect').value, a=document.getElementById('accountSelect').value, s=document.getElementById('stockSelect').value; if(u&&a&&s) localStorage.setItem(`calculator_seedMoney_${u}_${a}_${s}`, document.getElementById('seedMoney').value); }
-    function loadSeedMoney() { const u=document.getElementById('userSelect').value, a=document.getElementById('accountSelect').value, s=document.getElementById('stockSelect').value; if(!u||!a||!s){document.getElementById('seedMoney').value = "10,000,000"; return;} document.getElementById('seedMoney').value = localStorage.getItem(`calculator_seedMoney_${u}_${a}_${s}`) || localStorage.getItem(`calculator_seedMoney_${u}_${s}`) || "10,000,000"; }
+    function saveSeedMoney() { const u=document.getElementById('userSelect').value, a=document.getElementById('accountSelect').value; if(u&&a) localStorage.setItem(`calculator_seedMoney_${u}_${a}`, document.getElementById('seedMoney').value); }
+    function loadSeedMoney() { const u=document.getElementById('userSelect').value, a=document.getElementById('accountSelect').value; if(!u||!a){document.getElementById('seedMoney').value = "10,000,000"; return;} document.getElementById('seedMoney').value = localStorage.getItem(`calculator_seedMoney_${u}_${a}`) || "10,000,000"; }
     function loadFromLocalStorage() { const ls=localStorage; if(ls.getItem('calculator_users')) users = JSON.parse(ls.getItem('calculator_users')); if(ls.getItem('calculator_userAccountsMap')) { userAccountsMap = JSON.parse(ls.getItem('calculator_userAccountsMap')); accountStocksMap = JSON.parse(ls.getItem('calculator_accountStocksMap')); } else { users.forEach(u=>{ userAccountsMap[u]=["기본계좌"]; accountStocksMap[`${u}_기본계좌`]=[]; }); } users.forEach(u=>{ if(!userAccountsMap[u]) userAccountsMap[u]=["기본계좌"]; userAccountsMap[u].forEach(acc=>{ if(!accountStocksMap[`${u}_${acc}`]) accountStocksMap[`${u}_${acc}`]=[]; }); }); if(ls.getItem('calculator_tradeLogs')) { tradeLogs = JSON.parse(ls.getItem('calculator_tradeLogs')); tradeLogs.forEach(log => log.account = log.account || "기본계좌"); } if(ls.getItem('calculator_stockPrices')) stockPrices = JSON.parse(ls.getItem('calculator_stockPrices')); }
     function formatInputValue(input) { let val = input.value.replace(/[^0-9]/g, ''); input.value = val ? parseFloat(val).toLocaleString() : ''; }
     
@@ -175,11 +176,11 @@ style="width:15%;">정산금액</th><th style="width:12%;">평단가</th><th sty
     function selectStockFromQuickSelect(s) { handleStockChange(s); }
     
     function addUser() { let val = document.getElementById('newUserName').value.trim(); if(!val) return alert('이름을 입력하세요.'); if(users.includes(val)) return alert('이미 존재하는 사용자입니다.'); users.push(val); userAccountsMap[val] = ["기본계좌"]; accountStocksMap[`${val}_기본계좌`] = []; document.getElementById('newUserName').value=''; renderSelectOptions(); handleUserChange(val); saveToLocalStorage(); }
-    function deleteUser() { let cur = document.getElementById('userSelect').value; if(!cur) return alert('삭제할 사용자가 없습니다.'); if(!confirm(`'${cur}' 사용자의 모든 계좌 및 매매 내역이 삭제됩니다. 진행하시겠습니까?`)) return; (userAccountsMap[cur]||[]).forEach(acc=>{ (accountStocksMap[`${cur}_${acc}`]||[]).forEach(s=>localStorage.removeItem(`calculator_seedMoney_${cur}_${acc}_${s.name}`)); delete accountStocksMap[`${cur}_${acc}`]; }); delete userAccountsMap[cur]; users = users.filter(u=>u!==cur); tradeLogs = tradeLogs.filter(log=>log.user!==cur); renderSelectOptions(); saveToLocalStorage(); loadSeedMoney(); calculateAll(); }
+    function deleteUser() { let cur = document.getElementById('userSelect').value; if(!cur) return alert('삭제할 사용자가 없습니다.'); if(!confirm(`'${cur}' 사용자의 모든 계좌 및 매매 내역이 삭제됩니다. 진행하시겠습니까?`)) return; (userAccountsMap[cur]||[]).forEach(acc=>{ localStorage.removeItem(`calculator_seedMoney_${cur}_${acc}`); delete accountStocksMap[`${cur}_${acc}`]; }); delete userAccountsMap[cur]; users = users.filter(u=>u!==cur); tradeLogs = tradeLogs.filter(log=>log.user!==cur); renderSelectOptions(); saveToLocalStorage(); loadSeedMoney(); calculateAll(); }
     function addAccount() { let curU = document.getElementById('userSelect').value, val = document.getElementById('newAccountName').value.trim(); if(!curU) return alert('사용자 선택 필요.'); if(!val) return alert('계좌명 입력.'); if(userAccountsMap[curU].includes(val)) return alert('존재하는 계좌명.'); userAccountsMap[curU].push(val); accountStocksMap[`${curU}_${val}`]=[]; document.getElementById('newAccountName').value=''; renderAccountOptions(curU); handleAccountChange(val); saveToLocalStorage(); }
-    function deleteAccount() { let curU = document.getElementById('userSelect').value, curA = document.getElementById('accountSelect').value; if(!curU||!curA) return alert('삭제할 계좌 없음.'); if(!confirm(`삭제 진행?`)) return; (accountStocksMap[`${curU}_${curA}`]||[]).forEach(s=>localStorage.removeItem(`calculator_seedMoney_${curU}_${curA}_${s.name}`)); delete accountStocksMap[`${curU}_${curA}`]; userAccountsMap[curU]=userAccountsMap[curU].filter(a=>a!==curA); tradeLogs=tradeLogs.filter(log=>!(log.user===curU&&log.account===curA)); renderAccountOptions(curU); saveToLocalStorage(); loadSeedMoney(); calculateAll(); }
+    function deleteAccount() { let curU = document.getElementById('userSelect').value, curA = document.getElementById('accountSelect').value; if(!curU||!curA) return alert('삭제할 계좌 없음.'); if(!confirm(`삭제 진행?`)) return; localStorage.removeItem(`calculator_seedMoney_${curU}_${curA}`); delete accountStocksMap[`${curU}_${curA}`]; userAccountsMap[curU]=userAccountsMap[curU].filter(a=>a!==curA); tradeLogs=tradeLogs.filter(log=>!(log.user===curU&&log.account===curA)); renderAccountOptions(curU); saveToLocalStorage(); loadSeedMoney(); calculateAll(); }
     function addStock() { let curU=document.getElementById('userSelect').value, curA=document.getElementById('accountSelect').value, n=document.getElementById('newStockName').value.trim(), c=document.getElementById('newStockCode').value.trim(); if(!curU||!curA) return alert('사용자/계좌 선택 필요.'); if(!n) return alert('종목명 입력.'); let key=`${curU}_${curA}`; if(!accountStocksMap[key]) accountStocksMap[key]=[]; if(accountStocksMap[key].some(s=>s.name===n)) return alert('존재하는 종목명.'); accountStocksMap[key].push({name:n, code:c}); document.getElementById('newStockName').value=''; document.getElementById('newStockCode').value=''; renderStockOptions(curU,curA); handleStockChange(n); saveToLocalStorage(); }
-    function deleteStock() { let curU=document.getElementById('userSelect').value, curA=document.getElementById('accountSelect').value, curS=document.getElementById('stockSelect').value; if(!curS) return alert('삭제할 종목 없음.'); if(!confirm(`삭제 진행?`)) return; localStorage.removeItem(`calculator_seedMoney_${curU}_${curA}_${curS}`); let key=`${curU}_${curA}`; accountStocksMap[key]=accountStocksMap[key].filter(s=>s.name!==curS); tradeLogs=tradeLogs.filter(log=>!(log.user===curU&&log.account===curA&&log.stock===curS)); renderStockOptions(curU,curA); saveToLocalStorage(); loadSeedMoney(); calculateAll(); }
+    function deleteStock() { let curU=document.getElementById('userSelect').value, curA=document.getElementById('accountSelect').value, curS=document.getElementById('stockSelect').value; if(!curS) return alert('삭제할 종목 없음.'); if(!confirm(`삭제 진행?`)) return; let key=`${curU}_${curA}`; accountStocksMap[key]=accountStocksMap[key].filter(s=>s.name!==curS); tradeLogs=tradeLogs.filter(log=>!(log.user===curU&&log.account===curA&&log.stock===curS)); renderStockOptions(curU,curA); saveToLocalStorage(); loadSeedMoney(); calculateAll(); }
     
     function toggleInputFields() { let type=document.getElementById('tradeType').value, pl=document.getElementById('priceLabel'), ql=document.getElementById('qtyLabel'), tq=document.getElementById('tradeQty'); if(type==='매수'){pl.innerText='매수가 (원)';ql.innerText='체결수량 (주)';}else if(type==='매도'){pl.innerText='매도가 (원)';ql.innerText='매도수량 (주)';}else{pl.innerText='주당분배금 (원)';ql.innerText='적용수량 (주)'; if(editIndex===-1 && (!tq.value||tq.value==="0")) tq.value=globalCalculatedQty;} }
     function handleSubmit() { let u=document.getElementById('userSelect').value, a=document.getElementById('accountSelect').value, s=document.getElementById('stockSelect').value, d=document.getElementById('tradeDate').value, t=document.getElementById('tradeType').value, p=parseFloat(document.getElementById('tradePrice').value), q=parseFloat(document.getElementById('tradeQty').value); if(!u||!a||!s) return alert('설정 필요.'); if(t==='분배금'&&(isNaN(q)||q<=0)) return alert('보유수량 없음.'); if(!d||isNaN(p)||isNaN(q)||p<=0||q<=0) return alert('올바른 값 입력.'); let nl={user:u,account:a,stock:s,date:d,type:t,price:p,qty:q}; if(editIndex>-1) { tradeLogs[editIndex]=nl; editIndex=-1; } else tradeLogs.push(nl); resetForm(); saveToLocalStorage(); calculateAll(); }
@@ -191,9 +192,52 @@ style="width:15%;">정산금액</th><th style="width:12%;">평단가</th><th sty
     function resetForm() { editIndex=-1; document.getElementById('tradeDate').value=new Date().toISOString().substring(0,10); document.getElementById('tradeType').value='매수'; document.getElementById('tradePrice').value=''; document.getElementById('tradeQty').value=''; toggleInputFields(); document.getElementById('submitBtn').innerText="내역 추가"; }
     
     function updateStockPriceMap() { let s=document.getElementById('stockSelect').value; if(s) stockPrices[s]=document.getElementById('currentPrice').value; saveToLocalStorage(); calculateRealtimeMetrics(); }
-    function calculateRealtimeMetrics() { let cp=parseFloat(document.getElementById('currentPrice').value.replace(/,/g,''))||0, cb=parseFloat(document.getElementById('currentBalance').innerText.replace(/[^0-9]/g,''))||0, tp=globalCalculatedAvgPrice*globalCalculatedQty, te=cp*globalCalculatedQty, ep=te-tp, epr=tp>0?(ep/tp)*100:0; document.getElementById('totalPurchaseAmount').innerText=tp.toLocaleString()+" 원"; document.getElementById('totalEvaluationAmount').innerText=te.toLocaleString()+" 원"; let tap=tp+cb, tae=te+cb, pr=tap>0?((tp/tap)*100).toFixed(1):0, er=tae>0?((te/tae)*100).toFixed(1):0; document.getElementById('purchaseProportion').innerText=`${pr}%`; document.getElementById('evalProportion').innerText=`${er}%`; let cpi=document.getElementById('currentPrice'); cpi.style.color = cp===0||globalCalculatedQty===0 ? "#333" : (cp>globalCalculatedAvgPrice ? "#e53e3e" : (cp<globalCalculatedAvgPrice ? "#3182ce" : "#333")); let eps=document.getElementById('evaluationProfit'); if(cp===0||globalCalculatedQty===0){eps.innerText="0 원 (0.00%)"; eps.className="";} else{let s=ep>0?"+":""; eps.innerText=`${s}${ep.toLocaleString()} 원 (${s}${epr.toFixed(2)}%)`; eps.className=ep>0?"plus":(ep<0?"minus":"");} }
+    function calculateRealtimeMetrics() { 
+        let cp=parseFloat(document.getElementById('currentPrice').value.replace(/,/g,''))||0;
+        let cb=parseFloat(document.getElementById('currentBalance').innerText.replace(/[^0-9]/g,''))||0;
+        let accTotalPurchase=parseFloat(document.getElementById('accountTotalPurchaseAmount').innerText.replace(/[^0-9]/g,''))||0;
+        
+        let tp=globalCalculatedAvgPrice*globalCalculatedQty; 
+        let te=cp*globalCalculatedQty; 
+        let ep=te-tp; 
+        let epr=tp>0?(ep/tp)*100:0; 
+        
+        document.getElementById('totalPurchaseAmount').innerText=tp.toLocaleString()+" 원"; 
+        document.getElementById('totalEvaluationAmount').innerText=te.toLocaleString()+" 원"; 
+        
+        let accountTotalAsset = cb + accTotalPurchase;
+        let pr=accountTotalAsset>0?((tp/accountTotalAsset)*100).toFixed(1):0;
+        let tae=accountTotalAsset - tp + te;
+        let er=tae>0?((te/tae)*100).toFixed(1):0;
+        
+        document.getElementById('purchaseProportion').innerText=`${pr}%`; 
+        document.getElementById('evalProportion').innerText=`${er}%`; 
+        
+        let cpi=document.getElementById('currentPrice'); 
+        cpi.style.color = cp===0||globalCalculatedQty===0 ? "#333" : (cp>globalCalculatedAvgPrice ? "#e53e3e" : (cp<globalCalculatedAvgPrice ? "#3182ce" : "#333")); 
+        
+        let eps=document.getElementById('evaluationProfit'); 
+        if(cp===0||globalCalculatedQty===0){
+            eps.innerText="0 원 (0.00%)"; eps.className="";
+        } else{
+            let s=ep>0?"+":""; 
+            eps.innerText=`${s}${ep.toLocaleString()} 원 (${s}${epr.toFixed(2)}%)`; 
+            eps.className=ep>0?"plus":(ep<0?"minus":"");
+        } 
+    }
+    
     function fetchCurrentPrice(c) { if(!c) return; let cpi=document.getElementById('currentPrice'); cpi.value="조회 중..."; fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${c.endsWith('.KS')||c.endsWith('.KQ')?c:c+'.KS'}?interval=1m&range=1d`)}`).then(r=>r.ok?r.json():Promise.reject()).then(d=>{let j=JSON.parse(d.contents); let p=j?.chart?.result?.[0]?.meta?.regularMarketPrice || j?.chart?.result?.[0]?.meta?.previousClose; if(p){let s=document.getElementById('stockSelect').value; cpi.value=Number(p).toLocaleString(); stockPrices[s]=cpi.value; saveToLocalStorage(); calculateRealtimeMetrics();} else throw new Error();}).catch(()=>{cpi.value=""; cpi.placeholder="조회 실패 (수동 입력)";}); }
-    function calculateCurrentBalance(u,a,s,sm) { let cb=sm; tradeLogs.forEach(l=>{if(l.user===u&&l.account===a&&l.stock===s){ if(l.type==='매수')cb-=l.price*l.qty; if(['매도','분배금'].includes(l.type))cb+=l.price*l.qty;}}); document.getElementById('currentBalance').innerText=cb.toLocaleString()+" 원"; }
+    
+    function calculateCurrentBalance(u,a,sm) { 
+        let cb=sm; 
+        tradeLogs.forEach(l=>{
+            if(l.user===u&&l.account===a){ 
+                if(l.type==='매수')cb-=l.price*l.qty; 
+                if(['매도','분배금'].includes(l.type))cb+=l.price*l.qty;
+            }
+        }); 
+        document.getElementById('currentBalance').innerText=cb.toLocaleString()+" 원"; 
+    }
 
 function openUserDashboard() {
         const currentUser = document.getElementById('userSelect').value;
@@ -271,7 +315,6 @@ function openUserDashboard() {
             }
         });
 
-        // 1. 포트폴리오 탭 렌더링 로직
         Object.keys(accountsData).forEach(acc => {
             Object.keys(accountsData[acc]).forEach(stock => {
                 let st = accountsData[acc][stock];
@@ -328,7 +371,6 @@ function openUserDashboard() {
 
         if(!hasPortfolioData) tbodyPortfolio.innerHTML = `<tr><td colspan="5" class="text-center" style="color:#718096; padding:20px;">매매 내역이 존재하지 않습니다.</td></tr>`;
 
-        // 2. 월별/연도별 실현손익 및 배당금 탭 렌더링 로직
         const sortedMonths = Object.keys(monthlyData).sort((a, b) => b.localeCompare(a));
         let hasProfit = false, hasDividend = false;
         
@@ -498,7 +540,7 @@ function openStockDashboard() {
                     if (st.currentQty === 0) st.currentAvgPrice = 0;
                 }
             } else if (log.type === '분배금') {
-                // 분배금은 종목 계좌별 현황 팝업의 총 실현손익에 합산하지 않음
+                
             }
         });
 
@@ -555,34 +597,56 @@ function openStockDashboard() {
         document.getElementById('stockDashboardModal').style.display = 'flex';
     }
 
-// 계좌 보유 현황 모달 닫기
 function closeUserDashboard(e) {
-    // 1. 이벤트 객체(e)가 있으면 배경 클릭(overlay)인지 확인
-    // 2. 이벤트 객체가 없으면 닫기 버튼 클릭이므로 무조건 닫음
     if (!e || e.target.id === 'dashboardModal') {
         document.getElementById('dashboardModal').style.display = 'none';
     }
 }
 
-// 종목 계좌별 현황 모달 닫기
 function closeStockDashboard(e) {
-    if (!e || e.target.id === 'stockDashboardModal') {
+    if (!e || e.target.id === 'stockDashboardModal' || e.type==='click') {
         document.getElementById('stockDashboardModal').style.display = 'none';
     }
 }
-
     
     function switchDashboardTab(tId, btn) { document.querySelectorAll('.tab-content, .tab-btn').forEach(el=>el.classList.remove('active')); document.getElementById(`tab-${tId}`).classList.add('active'); if(btn) btn.classList.add('active'); }
-
-
-
-    function closeStockDashboard(e) { if(!e || e.target.id==='stockDashboardModal' || e.type==='click') document.getElementById('stockDashboardModal').style.display='none'; }
     
     function calculateAll() {
         let u=document.getElementById('userSelect').value, a=document.getElementById('accountSelect').value, s=document.getElementById('stockSelect').value, stks=accountStocksMap[`${u}_${a}`]||[], actS=stks.find(x=>x.name===s);
-        if(!u||!a||!s) { document.getElementById('viewTitle').innerHTML=`계좌: [${u||'없음'} - ${a||'없음'}]<br>선택 종목: [${s||'없음'}]`; document.getElementById('tradeLogBody').innerHTML=''; ['currentBalance','totalQuantity','avgPrice','totalProfit','totalDividend'].forEach(id=>document.getElementById(id).innerText="0 원"); document.getElementById('currentPrice').value=''; globalCalculatedAvgPrice=globalCalculatedQty=0; return calculateRealtimeMetrics(); }
-        document.getElementById('viewTitle').innerHTML=`계좌: [${u} - ${a}]<br>선택 종목: [${s}${actS?.code?' ('+actS.code+')':''}]`; if(actS?.code) fetchCurrentPrice(actS.code); else document.getElementById('currentPrice').value = stockPrices[s]||'';
-        let sm = parseFloat(document.getElementById('seedMoney').value.replace(/,/g,''))||0, tb=document.getElementById('tradeLogBody'); tb.innerHTML=''; calculateCurrentBalance(u,a,s,sm);
+        if(!u||!a||!s) { 
+            document.getElementById('viewTitle').innerHTML=`계좌: [${u||'없음'} - ${a||'없음'}]<br>선택 종목: [${s||'없음'}]`; 
+            document.getElementById('tradeLogBody').innerHTML=''; 
+            ['currentBalance','accountTotalPurchaseAmount','totalQuantity','avgPrice','totalProfit','totalDividend'].forEach(id=>{ let el = document.getElementById(id); if(el) el.innerText="0 원";}); 
+            document.getElementById('currentPrice').value=''; globalCalculatedAvgPrice=globalCalculatedQty=0; 
+            return calculateRealtimeMetrics(); 
+        }
+        document.getElementById('viewTitle').innerHTML=`계좌: [${u} - ${a}]<br>선택 종목: [${s}${actS?.code?' ('+actS.code+')':''}]`; 
+        if(actS?.code) fetchCurrentPrice(actS.code); else document.getElementById('currentPrice').value = stockPrices[s]||'';
+        
+        let sm = parseFloat(document.getElementById('seedMoney').value.replace(/,/g,''))||0, tb=document.getElementById('tradeLogBody'); 
+        tb.innerHTML=''; 
+        calculateCurrentBalance(u,a,sm);
+        
+        // 계좌 내 전체 종목 매입금액 합계 계산
+        let accTempData = {};
+        let accTotalPurchase = 0;
+        tradeLogs.forEach(l => {
+            if(l.user === u && l.account === a) {
+                if(!accTempData[l.stock]) accTempData[l.stock] = {qty: 0, avgPrice: 0};
+                let st = accTempData[l.stock];
+                if(l.type === '매수') {
+                    let total = (st.avgPrice * st.qty) + (l.price * l.qty);
+                    st.qty += l.qty;
+                    st.avgPrice = st.qty > 0 ? Math.round(total / st.qty) : 0;
+                } else if(l.type === '매도') {
+                    st.qty -= l.qty;
+                    if(st.qty <= 0) { st.qty = 0; st.avgPrice = 0; }
+                }
+            }
+        });
+        for (let stk in accTempData) accTotalPurchase += accTempData[stk].qty * accTempData[stk].avgPrice;
+        document.getElementById('accountTotalPurchaseAmount').innerText = accTotalPurchase.toLocaleString() + " 원";
+
         let cq=0, cap=0, tp=0, td=0;
         tradeLogs.forEach((l, i) => { if(l.user!==u||l.account!==a||l.stock!==s) return; let am=l.price*l.qty, err="", pr="-", prr="-", pCls="", pDis="";
             if(l.type==='매수'){ cq+=l.qty; cap=cq>0?Math.round(((cap*(cq-l.qty))+am)/cq):0; }
