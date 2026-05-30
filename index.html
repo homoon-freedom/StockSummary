@@ -61,6 +61,26 @@
     </style>
 </head>
 <body>
+<div class="config-box">
+    <div class="title-label">📈 종목 관리 (현재 계좌 전용)</div>
+    <div class="config-group">
+        <label>등록된 종목 리스트</label>
+        <select id="stockSelect" onchange="handleStockChange(this.value)"></select>
+    </div>
+    <div style="display:flex; gap:5px;">
+        <button class="btn-full btn-del" onclick="deleteStock()">삭제</button>
+        <button class="btn-full btn-toggle-input" style="background-color:#ecc94b;" onclick="triggerEditStock()">수정</button>
+    </div>
+    <div class="config-group" style="margin-top:10px;">
+        <label>종목명</label>
+        <input type="text" id="newStockName" placeholder="예: 삼성전자">
+    </div>
+    <div class="config-group" style="margin-top:5px;">
+        <label>종목코드</label>
+        <input type="text" id="newStockCode" placeholder="예: 005930">
+    </div>
+    <button class="btn-full btn-add" style="margin-top:5px;" onclick="addStock()">등록/수정사항 저장</button>
+</div>
 <div class="container">
     <h2>주식 매매 내역 및 평단가 계산기</h2>
     <button class="btn-toggle btn-toggle-config" onclick="toggleConfigSection()"><span id="configIcon">⚙️</span> <span id="configText">사용자/계좌/종목 설정 열기</span></button>
@@ -194,7 +214,71 @@ style="width:15%;">정산금액</th><th style="width:12%;">평단가</th><th sty
     function deleteUser() { let cur = document.getElementById('userSelect').value; if(!cur) return alert('삭제할 사용자가 없습니다.'); if(!confirm(`'${cur}' 사용자의 모든 계좌 및 매매 내역이 삭제됩니다. 진행하시겠습니까?`)) return; (userAccountsMap[cur]||[]).forEach(acc=>{ localStorage.removeItem(`calculator_seedMoney_${cur}_${acc}`); delete accountStocksMap[`${cur}_${acc}`]; }); delete userAccountsMap[cur]; users = users.filter(u=>u!==cur); tradeLogs = tradeLogs.filter(log=>log.user!==cur); renderSelectOptions(); saveToLocalStorage(); loadSeedMoney(); calculateAll(); }
     function addAccount() { let curU = document.getElementById('userSelect').value, val = document.getElementById('newAccountName').value.trim(); if(!curU) return alert('사용자 선택 필요.'); if(!val) return alert('계좌명 입력.'); if(userAccountsMap[curU].includes(val)) return alert('존재하는 계좌명.'); userAccountsMap[curU].push(val); accountStocksMap[`${curU}_${val}`]=[]; document.getElementById('newAccountName').value=''; renderAccountOptions(curU); handleAccountChange(val); saveToLocalStorage(); }
     function deleteAccount() { let curU = document.getElementById('userSelect').value, curA = document.getElementById('accountSelect').value; if(!curU||!curA) return alert('삭제할 계좌 없음.'); if(!confirm(`삭제 진행?`)) return; localStorage.removeItem(`calculator_seedMoney_${curU}_${curA}`); delete accountStocksMap[`${curU}_${curA}`]; userAccountsMap[curU]=userAccountsMap[curU].filter(a=>a!==curA); tradeLogs=tradeLogs.filter(log=>!(log.user===curU&&log.account===curA)); renderAccountOptions(curU); saveToLocalStorage(); loadSeedMoney(); calculateAll(); }
-    function addStock() { let curU=document.getElementById('userSelect').value, curA=document.getElementById('accountSelect').value, n=document.getElementById('newStockName').value.trim(), c=document.getElementById('newStockCode').value.trim(); if(!curU||!curA) return alert('사용자/계좌 선택 필요.'); if(!n) return alert('종목명 입력.'); let key=`${curU}_${curA}`; if(!accountStocksMap[key]) accountStocksMap[key]=[]; if(accountStocksMap[key].some(s=>s.name===n)) return alert('존재하는 종목명.'); accountStocksMap[key].push({name:n, code:c}); document.getElementById('newStockName').value=''; document.getElementById('newStockCode').value=''; renderStockOptions(curU,curA); handleStockChange(n); saveToLocalStorage(); }
+
+
+// 전역 변수에 수정 모드 상태 추가
+let isStockEditMode = false;
+let originalStockName = "";
+
+// [수정] 버튼 클릭 시 입력창으로 데이터 로드
+function triggerEditStock() {
+    let curS = document.getElementById('stockSelect').value;
+    let curU = document.getElementById('userSelect').value;
+    let curA = document.getElementById('accountSelect').value;
+    if (!curS) return alert('수정할 종목을 선택하세요.');
+    
+    let stocks = accountStocksMap[`${curU}_${curA}`];
+    let stockObj = stocks.find(s => s.name === curS);
+    
+    document.getElementById('newStockName').value = stockObj.name;
+    document.getElementById('newStockCode').value = stockObj.code || "";
+    
+    isStockEditMode = true;
+    originalStockName = curS;
+    alert("입력창에 정보가 불러와졌습니다. 내용을 수정 후 '등록/수정사항 저장'을 누르세요.");
+}
+
+// 기존 addStock 함수를 수정하여 등록과 수정을 모두 처리
+function addStock() {
+    let curU = document.getElementById('userSelect').value, 
+        curA = document.getElementById('accountSelect').value, 
+        n = document.getElementById('newStockName').value.trim(), 
+        c = document.getElementById('newStockCode').value.trim();
+    
+    if (!curU || !curA) return alert('사용자/계좌 선택 필요.');
+    if (!n) return alert('종목명 입력.');
+    
+    let key = `${curU}_${curA}`;
+    let stocks = accountStocksMap[key];
+
+    if (isStockEditMode) {
+        // 수정 모드
+        let idx = stocks.findIndex(s => s.name === originalStockName);
+        stocks[idx] = {name: n, code: c};
+        
+        // tradeLogs의 종목명도 일괄 업데이트
+        tradeLogs.forEach(log => {
+            if(log.user === curU && log.account === curA && log.stock === originalStockName) {
+                log.stock = n;
+            }
+        });
+        
+        isStockEditMode = false;
+        originalStockName = "";
+    } else {
+        // 등록 모드
+        if (stocks.some(s => s.name === n)) return alert('이미 존재하는 종목명입니다.');
+        stocks.push({name: n, code: c});
+    }
+
+    document.getElementById('newStockName').value = '';
+    document.getElementById('newStockCode').value = '';
+    renderStockOptions(curU, curA);
+    handleStockChange(n);
+    saveToLocalStorage();
+    calculateAll();
+}
+
     function deleteStock() { let curU=document.getElementById('userSelect').value, curA=document.getElementById('accountSelect').value, curS=document.getElementById('stockSelect').value; if(!curS) return alert('삭제할 종목 없음.'); if(!confirm(`삭제 진행?`)) return; let key=`${curU}_${curA}`; accountStocksMap[key]=accountStocksMap[key].filter(s=>s.name!==curS); tradeLogs=tradeLogs.filter(log=>!(log.user===curU&&log.account===curA&&log.stock===curS)); renderStockOptions(curU,curA); saveToLocalStorage(); loadSeedMoney(); calculateAll(); }
     
     function toggleInputFields() { 
