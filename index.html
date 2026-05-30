@@ -203,7 +203,7 @@ style="width:15%;">정산금액</th><th style="width:12%;">평단가</th><th sty
     function calculateAll() {
         let u=document.getElementById('userSelect').value, a=document.getElementById('accountSelect').value, s=document.getElementById('stockSelect').value, stks=accountStocksMap[`${u}_${a}`]||[], actS=stks.find(x=>x.name===s);
         if(!u||!a||!s) { document.getElementById('viewTitle').innerHTML=`계좌: [${u||'없음'} - ${a||'없음'}]<br>선택 종목: [${s||'없음'}]`; document.getElementById('tradeLogBody').innerHTML=''; ['currentBalance','totalQuantity','avgPrice','totalProfit','totalDividend'].forEach(id=>document.getElementById(id).innerText="0 원"); document.getElementById('currentPrice').value=''; globalCalculatedAvgPrice=globalCalculatedQty=0; return calculateRealtimeMetrics(); }
-        document.getElementById('viewTitle').innerHTML=`계좌: [${u} - ${a}]<br>선택 종목: [${s}${actS?.code?' ('+actS.code+')':''}]`; if(actS?.code) fetchCurrentPrice(actS.code); else document.getElementById('currentPrice').value = stockPrices[s]||'';
+        document.getElementById('viewTitle').innerHTML=`계좌: [${u} - ${a}] - 선택 종목: [${s}${actS?.code?' ('+actS.code+')':''}]`; if(actS?.code) fetchCurrentPrice(actS.code); else document.getElementById('currentPrice').value = stockPrices[s]||'';
         let sm = parseFloat(document.getElementById('seedMoney').value.replace(/,/g,''))||0, tb=document.getElementById('tradeLogBody'); tb.innerHTML=''; calculateCurrentBalance(u,a,s,sm);
         let cq=0, cap=0, tp=0, td=0;
         tradeLogs.forEach((l, i) => { if(l.user!==u||l.account!==a||l.stock!==s) return; let am=l.price*l.qty, err="", pr="-", prr="-", pCls="", pDis="";
