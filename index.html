@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -316,18 +315,24 @@ function openUserDashboard() {
             }
         });
 
+        // 수량이 0인 종목 제외하고 총 매입금액 계산
         Object.keys(accountsData).forEach(acc => {
             Object.keys(accountsData[acc]).forEach(stock => {
                 let st = accountsData[acc][stock];
-                st.totalPurchaseAmount = st.currentAvgPrice * st.currentQty;
-                grandTotalPurchaseAmount += st.totalPurchaseAmount;
+                if (st.currentQty > 0) {
+                    st.totalPurchaseAmount = st.currentAvgPrice * st.currentQty;
+                    grandTotalPurchaseAmount += st.totalPurchaseAmount;
+                }
             });
         });
 
         let hasPortfolioData = false;
         
         Object.keys(accountsData).sort().forEach(acc => {
-            const stocksInAcc = Object.keys(accountsData[acc]);
+            // 현재 보유 수량이 0보다 큰 종목만 추출
+            const stocksInAcc = Object.keys(accountsData[acc]).filter(stockName => accountsData[acc][stockName].currentQty > 0);
+            
+            // 해당 계좌에 1주라도 들고 있는 종목이 없으면 계좌 이름도 그리지 않음
             if (stocksInAcc.length === 0) return;
 
             const trHeader = document.createElement('tr');
@@ -370,7 +375,7 @@ function openUserDashboard() {
             });
         });
 
-        if(!hasPortfolioData) tbodyPortfolio.innerHTML = `<tr><td colspan="5" class="text-center" style="color:#718096; padding:20px;">매매 내역이 존재하지 않습니다.</td></tr>`;
+        if(!hasPortfolioData) tbodyPortfolio.innerHTML = `<tr><td colspan="5" class="text-center" style="color:#718096; padding:20px;">보유 중인 종목 내역이 없습니다. (수량 0주 제외됨)</td></tr>`;
 
         const sortedMonths = Object.keys(monthlyData).sort((a, b) => b.localeCompare(a));
         let hasProfit = false, hasDividend = false;
@@ -545,18 +550,26 @@ function openStockDashboard() {
             }
         });
 
+        // 수량이 0인 계좌 제외하고 합산 계산
         Object.keys(accountsData).forEach(acc => {
             let st = accountsData[acc];
-            st.totalPurchaseAmount = st.currentAvgPrice * st.currentQty;
-            grandTotalPurchaseAmount += st.totalPurchaseAmount;
-            grandTotalQty += st.currentQty;
-            grandTotalProfit += st.totalProfit;
+            if (st.currentQty > 0) {
+                st.totalPurchaseAmount = st.currentAvgPrice * st.currentQty;
+                grandTotalPurchaseAmount += st.totalPurchaseAmount;
+                grandTotalQty += st.currentQty;
+                grandTotalProfit += st.totalProfit;
+            }
         });
 
         let grandAvgPrice = grandTotalQty > 0 ? Math.round(grandTotalPurchaseAmount / grandTotalQty) : 0;
+        let hasStockData = false;
 
         Object.keys(accountsData).sort().forEach(acc => {
             let data = accountsData[acc];
+            
+            // 보유 수량이 0인 계좌는 출력 안 함
+            if (data.currentQty === 0) return;
+            hasStockData = true;
 
             let profitClass = data.totalProfit > 0 ? "plus" : (data.totalProfit < 0 ? "minus" : "");
             let profitSign = data.totalProfit > 0 ? "+" : "";
@@ -581,6 +594,10 @@ function openStockDashboard() {
             `;
             tbody.appendChild(tr);
         });
+
+        if (!hasStockData) {
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center" style="color:#718096; padding:20px;">현재 보유 중인 계좌가 없습니다. (수량 0주 제외됨)</td></tr>`;
+        }
 
         let totalProfitClass = grandTotalProfit > 0 ? "plus" : (grandTotalProfit < 0 ? "minus" : "");
         let totalProfitSign = grandTotalProfit > 0 ? "+" : "";
@@ -628,7 +645,6 @@ function closeStockDashboard(e) {
         tb.innerHTML=''; 
         calculateCurrentBalance(u,a,sm);
         
-        // 계좌 내 전체 종목 매입금액 합계 계산
         let accTempData = {};
         let accTotalPurchase = 0;
         tradeLogs.forEach(l => {
