@@ -658,6 +658,10 @@
             <span id="totalProfit">0 원</span>
         </div>
         <div class="summary-item">
+            <label>총 배당금 (해당종목)</label>
+            <span id="totalDividend" style="color: #38a169; font-weight: bold;">0 원</span>
+        </div>
+        <div class="summary-item">
             <label>매입 비중</label>
             <span id="purchaseProportion" style="font-size: 16px; font-weight: bold; color: #2b6cb0;">0.0%</span>
         </div>
@@ -1485,7 +1489,6 @@
         let accountsData = {};
         let grandTotalPurchaseAmount = 0;
 
-        // 수정된 데이터 수집 로직 (실현손익도 디테일 저장, 배당금 디테일에 날짜/수량/단가 추가)
         userLogs.forEach(log => {
             let monthKey = log.date.substring(0, 7);
             if (!monthlyData[monthKey]) monthlyData[monthKey] = { profit: 0, dividend: 0, divDetails: [], profitDetails: [] };
@@ -1512,14 +1515,13 @@
                     let profit = (log.price - st.currentAvgPrice) * log.qty;
                     st.totalProfit += profit;
                     monthlyData[monthKey].profit += profit; 
-                    monthlyData[monthKey].profitDetails.push({ acc: log.account, stock: log.stock, amt: profit }); // 실현손익 디테일 추가
+                    monthlyData[monthKey].profitDetails.push({ acc: log.account, stock: log.stock, amt: profit }); 
                     st.currentQty -= log.qty;
                     if (st.currentQty === 0) st.currentAvgPrice = 0;
                 }
             } else if (log.type === '분배금') {
-                st.totalProfit += tradeAmount;
+                // 수정됨: 모달창의 포트폴리오 '총 실현손익'에 분배금이 합산되지 않도록 st.totalProfit 추가 제외
                 monthlyData[monthKey].dividend += tradeAmount;
-                // 날짜, 수량, 주당배당금 정보 추가
                 monthlyData[monthKey].divDetails.push({ 
                     acc: log.account, 
                     stock: log.stock, 
@@ -1602,7 +1604,6 @@
             let monthData = monthlyData[month];
             let year = month.substring(0, 4);
 
-            // ---------------- [배당금 연도 합계 로직] ----------------
             if (currentDivYear !== "" && year !== currentDivYear) {
                 const trYearD = document.createElement('tr');
                 trYearD.innerHTML = `
@@ -1610,12 +1611,11 @@
                     <td style="background:#e2e8f0; font-weight:bold; text-align:right; padding-right:15px; color:#2b6cb0;">+${yearDivSum.toLocaleString()} 원</td>
                 `;
                 tbodyDividend.appendChild(trYearD);
-                yearDivSum = 0; // 합산 초기화
+                yearDivSum = 0; 
             }
             currentDivYear = year;
             yearDivSum += monthData.dividend;
 
-            // ---------------- [실현손익 연도 합계 로직] ----------------
             if (currentProfitYear !== "" && year !== currentProfitYear) {
                 const trYearP = document.createElement('tr');
                 let yClass = yearProfitSum > 0 ? "plus" : (yearProfitSum < 0 ? "minus" : "");
@@ -1625,19 +1625,16 @@
                     <td class="${yClass}" style="background:#e2e8f0; font-weight:bold; text-align:right; padding-right:15px;">${ySign}${yearProfitSum.toLocaleString()} 원</td>
                 `;
                 tbodyProfit.appendChild(trYearP);
-                yearProfitSum = 0; // 합산 초기화
+                yearProfitSum = 0; 
             }
             currentProfitYear = year;
             yearProfitSum += monthData.profit;
 
-
-            // ================ [실현손익 렌더링 (월별 및 종목 상세)] ================
             if(monthData.profit !== 0) {
                 hasProfit = true;
                 let profitClass = monthData.profit > 0 ? "plus" : (monthData.profit < 0 ? "minus" : "");
                 let profitSign = monthData.profit > 0 ? "+" : "";
                 
-                // 1) 월 합계 행
                 const trMonthSumP = document.createElement('tr');
                 trMonthSumP.innerHTML = `
                     <td rowspan="${monthData.profitDetails.length + 1}" style="text-align: center; font-weight: bold; vertical-align: middle; background-color: #fff; border-bottom: 2px solid #e2e8f0;">${month}</td>
@@ -1646,7 +1643,6 @@
                 `;
                 tbodyProfit.appendChild(trMonthSumP);
 
-                // 2) 상세 내역 행 (계좌 / 종목)
                 monthData.profitDetails.forEach((p, idx) => {
                     const isLast = idx === monthData.profitDetails.length - 1;
                     const borderStyle = isLast ? "border-bottom: 2px solid #e2e8f0;" : "";
@@ -1664,11 +1660,9 @@
                 });
             }
 
-            // ================ [배당금 렌더링 (월별 및 종목 상세 수정됨)] ================
             if(monthData.dividend !== 0) {
                 hasDividend = true;
 
-                // 1) 월 합계 행 (rowspan으로 묶음)
                 const trMonthSumD = document.createElement('tr');
                 trMonthSumD.innerHTML = `
                     <td rowspan="${monthData.divDetails.length + 1}" style="text-align: center; font-weight: bold; vertical-align: middle; background-color: #fff; border-bottom: 2px solid #e2e8f0;">${month}</td>
@@ -1677,7 +1671,6 @@
                 `;
                 tbodyDividend.appendChild(trMonthSumD);
 
-                // 2) 상세 내역 행 (계좌 / 종목 / 날짜 / 주식수 / 주당배당금 / 배당금액)
                 monthData.divDetails.forEach((d, idx) => {
                     const isLast = idx === monthData.divDetails.length - 1;
                     const borderStyle = isLast ? "border-bottom: 2px solid #e2e8f0;" : "";
@@ -1695,7 +1688,6 @@
             }
         });
 
-        // 마지막 순회 년도의 배당금 합계 추가
         if (hasDividend && currentDivYear !== "") {
             const trLastYearD = document.createElement('tr');
             trLastYearD.innerHTML = `
@@ -1705,7 +1697,6 @@
             tbodyDividend.appendChild(trLastYearD);
         }
         
-        // 마지막 순회 년도의 실현손익 합계 추가
         if (hasProfit && currentProfitYear !== "") {
             const trLastYearP = document.createElement('tr');
             let yClass = yearProfitSum > 0 ? "plus" : (yearProfitSum < 0 ? "minus" : "");
@@ -1775,7 +1766,8 @@
                     if (st.currentQty === 0) st.currentAvgPrice = 0;
                 }
             } else if (log.type === '분배금') {
-                st.totalProfit += tradeAmount;
+                // 수정됨: 종목 계좌별 현황 팝업의 '총 실현손익'에서도 분배금 합산 제외
+                // st.totalProfit += tradeAmount; (이 줄을 삭제했습니다)
             }
         });
 
@@ -1854,6 +1846,7 @@
             document.getElementById('totalQuantity').innerText = "0 주";
             document.getElementById('avgPrice').innerText = "0 원";
             document.getElementById('totalProfit').innerText = "0 원";
+            document.getElementById('totalDividend').innerText = "0 원"; // 초기화 추가됨
             document.getElementById('currentPrice').value = '';
             globalCalculatedAvgPrice = 0;
             globalCalculatedQty = 0;
@@ -1879,6 +1872,7 @@
         let currentQty = 0;             
         let currentAvgPrice = 0;        
         let totalProfit = 0;            
+        let totalDividend = 0; // 변수 추가됨
 
         tradeLogs.forEach((log, globalIndex) => {
             if (log.user !== currentUser || log.account !== currentAccount || log.stock !== currentStock) return; 
@@ -1904,7 +1898,7 @@
                 }
             } else if (log.type === '분배금') {
                 profit = tradeAmount; 
-                totalProfit += profit;
+                totalDividend += profit; // 수정됨: totalProfit이 아닌 totalDividend로 누적
             }
 
             let profitClass = "";
@@ -1965,6 +1959,10 @@
         const totalProfitSpan = document.getElementById('totalProfit');
         totalProfitSpan.innerText = totalProfit.toLocaleString() + " 원";
         totalProfitSpan.className = totalProfit > 0 ? "plus" : (totalProfit < 0 ? "minus" : "");
+
+        // 렌더링 추가됨
+        const totalDividendSpan = document.getElementById('totalDividend');
+        totalDividendSpan.innerText = totalDividend > 0 ? "+" + totalDividend.toLocaleString() + " 원" : "0 원";
 
         globalCalculatedAvgPrice = currentAvgPrice;
         globalCalculatedQty = currentQty;
