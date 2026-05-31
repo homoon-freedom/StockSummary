@@ -172,11 +172,11 @@
         <thead>
             <tr>
                 <th style="width:18%;">종목명(코드)</th>
-                <th style="width:9%;">보유수량</th>
-                <th style="width:11%;">평단가</th>
-                <th style="width:11%;">현재가</th>
-                <th style="width:18%;">총 매입금액(비중)</th>
-                <th style="width:18%;">총 평가금액(비중)</th>
+                <th style="width:8%;">보유수량</th>
+                <th style="width:9%;">평단가</th>
+                <th style="width:9%;">현재가</th>
+                <th style="width:20%;">총 매입금액(비중)</th>
+                <th style="width:20%;">총 평가금액(비중)</th>
                 <th style="width:15%;">총 실현손익</th>
             </tr>
         </thead>
@@ -518,25 +518,35 @@ function openUserDashboard() {
     });
 
     let hasPortfolioData = false;
-        Object.keys(accountsData).sort().forEach(acc => {
+            Object.keys(accountsData).sort().forEach(acc => {
         const stocksInAcc = Object.keys(accountsData[acc]).filter(stockName => accountsData[acc][stockName].currentQty > 0);
         if (stocksInAcc.length === 0) return;
 
         let accTotalPurchase = accountSums[acc].purchase;
         let accTotalEval = accountSums[acc].eval;
         
-        // 평가금액 합계에 따른 색상 결정 (수익이면 빨강, 손실이면 파랑)
+        // 평가금액 합계에 따른 색상 결정
         let headerEvalColor = accTotalEval > accTotalPurchase ? "#e53e3e" : (accTotalEval < accTotalPurchase ? "#3182ce" : "#333");
 
-                const trHeader = document.createElement('tr');
-        // 5번째, 6번째 td에 text-align: left; 를 추가하여 아래 행과 열을 맞춥니다.
+        // 💡 손익금 및 손익률 계산 추가
+        let accProfit = accTotalEval - accTotalPurchase;
+        let accProfitRate = accTotalPurchase > 0 ? ((accProfit / accTotalPurchase) * 100).toFixed(2) : "0.00";
+        let profitSign = accProfit > 0 ? "+" : ""; // 양수일 때만 + 기호 추가
+
+        const trHeader = document.createElement('tr');
         trHeader.innerHTML = `
-            <td colspan="4" style="background-color: #edf2f7; font-weight: bold; color: #333; text-align: left; padding: 8px 10px; border-top: 2px solid #cbd5e0;">📁 계좌: ${acc}</td>
-            <td style="background-color: #edf2f7; font-weight: bold; color: #333; text-align: left; padding: 8px 4px; border-top: 2px solid #cbd5e0;">${accTotalPurchase.toLocaleString()} 원</td>
-            <td style="background-color: #edf2f7; font-weight: bold; color: ${headerEvalColor}; text-align: left; padding: 8px 4px; border-top: 2px solid #cbd5e0;">${accTotalEval.toLocaleString()} 원</td>
+            <td colspan="4" style="background-color: #edf2f7; font-weight: bold; color: #333; text-align: left; padding: 8px 10px; border-top: 2px solid #cbd5e0; vertical-align: middle;">📁 계좌: ${acc}</td>
+            <td style="background-color: #edf2f7; font-weight: bold; color: #333; text-align: left; padding: 8px 4px; border-top: 2px solid #cbd5e0; vertical-align: middle;">
+                ${accTotalPurchase.toLocaleString()} 원
+            </td>
+            <td style="background-color: #edf2f7; font-weight: bold; color: ${headerEvalColor}; text-align: left; padding: 8px 4px; border-top: 2px solid #cbd5e0; vertical-align: middle;">
+                ${accTotalEval.toLocaleString()} 원
+                <div style="font-size: 11px; margin-top: 2px;">(${profitSign}${accProfit.toLocaleString()} 원 / ${profitSign}${accProfitRate}%)</div>
+            </td>
             <td style="background-color: #edf2f7; border-top: 2px solid #cbd5e0;"></td>
         `;
         tbodyPortfolio.appendChild(trHeader);
+
 
 
 
