@@ -130,11 +130,14 @@
         <div class="summary-item"><label>계좌 총 평가금액</label><span id="accountTotalEvaluationAmount" style="font-weight:bold;">0 원</span></div>
         <div class="summary-item"><label>계좌 총 평가손익 (수익률)</label><span id="accountTotalEvaluationProfit">0 원 (0.00%)</span></div>
 <div class="summary-item">
+    <label>계좌 총 실현손익</label>
+    <span id="accountTotalRealizedProfit" style="font-weight:bold;">0 원</span>
+</div>
+<div class="summary-item">
     <label>보유 현황 (평단가/수량)</label>
     <span id="avgPriceAndQty" style="font-weight:bold; color:#2b6cb0;">0 원 (0 주)</span>
 </div>
         <div class="summary-item input-highlight"><label>📊 현재가 입력 (원)</label><input type="text" id="currentPrice" placeholder="조회 중..." oninput="formatInputValue(this); updateStockPriceMap();"></div>
-        
         <div class="summary-item"><label>해당종목 매입금액 (매입비중)</label><span id="totalPurchaseAmount">0 원 <span style="font-size:14px; color:#2b6cb0; font-weight:bold;">(0.0%)</span></span></div>
         <div class="summary-item"><label>해당종목 평가금액 (평가비중)</label><span id="totalEvaluationAmount">0 원 <span style="font-size:14px; color:#333; font-weight:bold;">(0.0%)</span></span></div>
                 <div class="summary-item"><label>평가손익 (수익률)</label><span id="evaluationProfit">0 원 (0.00%)</span></div>
@@ -335,27 +338,32 @@ function calculateRealtimeMetrics() {
     let accTempData = {}; 
     let totalAccPurchaseStocks = 0; 
     let totalAccEvalStocks = 0;
+    let totalAccRealizedProfit = 0; // 실현손익 누적 변수
 
-    // 모든 로그를 다 뒤져서 해당 계좌의 모든 종목 상태를 계산
+    // 모든 로그를 순회하며 계산
     tradeLogs.forEach(l => {
         if(l.user === u && l.account === a) {
             if(!accTempData[l.stock]) accTempData[l.stock] = {qty: 0, avgPrice: 0};
             let st = accTempData[l.stock];
+            
             if(l.type === '매수') {
                 let total = (st.avgPrice * st.qty) + (l.price * l.qty);
                 st.qty += l.qty;
                 st.avgPrice = st.qty > 0 ? Math.round(total / st.qty) : 0;
             } else if(l.type === '매도') {
+                // 실현손익 계산: (매도가 - 매수평단가) * 수량
+                totalAccRealizedProfit += (l.price - st.avgPrice) * l.qty;
                 st.qty -= l.qty;
+                if (st.qty === 0) st.avgPrice = 0;
             }
         }
     });
 
+    // 보유 중인 종목에 대한 평가 금액 계산
     for (let stk in accTempData) {
         let st = accTempData[stk];
         if (st.qty > 0) {
             totalAccPurchaseStocks += st.qty * st.avgPrice;
-            // 현재 종목이면 실시간가(cp), 나머지는 저장된 가격(stockPrices) 또는 평단가 사용
             let stkCp = (stk === curS) ? cp : (stockPrices[stk] ? parseFloat(String(stockPrices[stk]).replace(/,/g,'')) : st.avgPrice);
             totalAccEvalStocks += st.qty * stkCp;
         }
@@ -364,19 +372,19 @@ function calculateRealtimeMetrics() {
     let totalInvest = cb + totalAccPurchaseStocks;
     let totalEval = cb + totalAccEvalStocks;
     
-    let evalRatio = totalInvest > 0 ? ((totalEval / totalInvest) * 100).toFixed(1) : "0.0";
-    let cashRatio = totalInvest > 0 ? ((cb / totalInvest) * 100).toFixed(1) : "0.0";
-    let purchaseRatio = totalInvest > 0 ? ((totalAccPurchaseStocks / totalInvest) * 100).toFixed(1) : "0.0";
-
-    // 렌더링
-    document.getElementById('accountTotalEvaluationAmount').innerHTML = `${totalEval.toLocaleString()} 원 <span style="font-size:13px; color:#718096; font-weight:bold;">(${evalRatio}%)</span>`;
-    document.getElementById('currentBalance').innerHTML = `${cb.toLocaleString()} 원 <span style="font-size:13px; color:#718096; font-weight:bold;">(${cashRatio}%)</span>`;
-    document.getElementById('accountTotalPurchaseAmount').innerHTML = `${totalAccPurchaseStocks.toLocaleString()} 원 <span style="font-size:13px; color:#2b6cb0; font-weight:bold;">(${purchaseRatio}%)</span>`;
+    // UI 업데이트
+    document.getElementById('accountTotalEvaluationAmount').innerHTML = `${totalEval.toLocaleString()} 원 <span style="font-size:13px; color:#718096; font-weight:bold;">(${totalInvest > 0 ? ((totalEval / totalInvest) * 100).toFixed(1) : "0.0"}%)</span>`;
+    document.getElementById('currentBalance').innerHTML = `${cb.toLocaleString()} 원 <span style="font-size:13px; color:#718096; font-weight:bold;">(${totalInvest > 0 ? ((cb / totalInvest) * 100).toFixed(1) : "0.0"}%)</span>`;
+    document.getElementById('accountTotalPurchaseAmount').innerHTML = `${totalAccPurchaseStocks.toLocaleString()} 원 <span style="font-size:13px; color:#2b6cb0; font-weight:bold;">(${totalInvest > 0 ? ((totalAccPurchaseStocks / totalInvest) * 100).toFixed(1) : "0.0"}%)</span>`;
+    
+    // 신규 추가된 실현손익 항목 업데이트
+    let realizedEl = document.getElementById('accountTotalRealizedProfit');
+    realizedEl.innerText = (totalAccRealizedProfit >= 0 ? "+" : "") + totalAccRealizedProfit.toLocaleString() + " 원";
+    realizedEl.style.color = totalAccRealizedProfit > 0 ? "#e53e3e" : (totalAccRealizedProfit < 0 ? "#3182ce" : "#333");
 }
 
 
-
-    function calculateCurrentBalance(u,a,sm) { 
+   function calculateCurrentBalance(u,a,sm) { 
         let cb=sm, totalSm=sm;
         tradeLogs.forEach(l=>{
             if(l.user===u&&l.account===a){ 
