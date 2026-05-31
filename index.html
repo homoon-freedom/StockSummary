@@ -129,8 +129,8 @@
     <div class="summary-box">
         <div class="summary-item"><label>초기 씨드머니 (원)</label><input type="text" id="seedMoney" value="10,000,000" oninput="formatInputValue(this); saveSeedMoney(); calculateAll();" title="최초 시작 금액을 입력하세요."></div>
         <div class="summary-item"><label>총 적용 씨드머니 (입출금 포함)</label><span id="displaySeedMoney" style="color:#2b6cb0; font-weight:bold;">0 원</span></div>
-        <div class="summary-item"><label>계좌 총 매입금액</label><span id="accountTotalPurchaseAmount" style="color:#2b6cb0; font-weight:bold;">0 원</span></div>
-        <div class="summary-item"><label>계좌 예수금 (잔여 현금)</label><span id="currentBalance">0 원</span></div>
+        <div class="summary-item"><label>계좌 총 매입금액 (비중)</label><span id="accountTotalPurchaseAmount" style="color:#2b6cb0; font-weight:bold;">0 원</span></div>
+        <div class="summary-item"><label>계좌 예수금 (비중)</label><span id="currentBalance">0 원</span></div>
         <div class="summary-item"><label>계좌 총 평가금액</label><span id="accountTotalEvaluationAmount" style="font-weight:bold;">0 원</span></div>
         <div class="summary-item"><label>계좌 총 평가손익 (수익률)</label><span id="accountTotalEvaluationProfit">0 원 (0.00%)</span></div>
         
@@ -335,8 +335,8 @@
     
     function calculateRealtimeMetrics() { 
         let cp=parseFloat(document.getElementById('currentPrice').value.replace(/,/g,''))||0;
-        let cb=parseFloat(document.getElementById('currentBalance').innerText.replace(/[^0-9-]/g,''))||0;
-        let accTotalPurchase=parseFloat(document.getElementById('accountTotalPurchaseAmount').innerText.replace(/[^0-9-]/g,''))||0;
+        let cb=parseFloat(document.getElementById('currentBalance').innerText.split('원')[0].replace(/[^0-9-]/g,''))||0;
+        let accTotalPurchase=parseFloat(document.getElementById('accountTotalPurchaseAmount').innerText.split('원')[0].replace(/[^0-9-]/g,''))||0;
         
         let tp=globalCalculatedAvgPrice*globalCalculatedQty; 
         let te=cp*globalCalculatedQty; 
@@ -381,6 +381,13 @@
         let accEvalProfit = accountTotalEvalAsset - accountTotalInvestAsset;
         let accEvalProfitRate = accountTotalInvestAsset > 0 ? (accEvalProfit / accountTotalInvestAsset) * 100 : 0;
         
+        // 계좌 매입금액 및 예수금 비중 계산 적용
+        let cashRatio = accountTotalInvestAsset > 0 ? ((cb / accountTotalInvestAsset) * 100).toFixed(1) : "0.0";
+        let purchaseRatio = accountTotalInvestAsset > 0 ? ((totalAccPurchaseStocks / accountTotalInvestAsset) * 100).toFixed(1) : "0.0";
+        
+        document.getElementById('currentBalance').innerHTML = `${cb.toLocaleString()} 원 <span style="font-size:13px; color:#718096; font-weight:bold;">(${cashRatio}%)</span>`;
+        document.getElementById('accountTotalPurchaseAmount').innerHTML = `${totalAccPurchaseStocks.toLocaleString()} 원 <span style="font-size:13px; color:#2b6cb0; font-weight:bold;">(${purchaseRatio}%)</span>`;
+        
         // --- 계좌 총 평가금액 색상 적용 (평가금액 > 매입금액 = 적색, 낮으면 청색) ---
         let accEvalColor = accountTotalEvalAsset > accountTotalInvestAsset ? "#e53e3e" : (accountTotalEvalAsset < accountTotalInvestAsset ? "#3182ce" : "#333");
         let accEvalEl = document.getElementById('accountTotalEvaluationAmount');
@@ -396,15 +403,13 @@
             accProfitEl.className = accEvalProfit > 0 ? "plus" : (accEvalProfit < 0 ? "minus" : "");
         }
         
-        // --- 비중 계산 및 통합 삽입 ---
-        let accountTotalAsset = cb + accTotalPurchase;
-        let pr=accountTotalAsset>0?((tp/accountTotalAsset)*100).toFixed(1):0;
+        // --- 해당 종목 비중 계산 (분모 = 자산 총액 및 평가 총액 기준) ---
+        let pr=accountTotalInvestAsset>0?((tp/accountTotalInvestAsset)*100).toFixed(1):0;
         let er=accountTotalEvalAsset>0?((te/accountTotalEvalAsset)*100).toFixed(1):0; 
         
         let stockEvalColor = te > tp ? "#e53e3e" : (te < tp ? "#3182ce" : "#333");
         document.getElementById('totalPurchaseAmount').innerHTML = `${tp.toLocaleString()} 원 <span style="font-size:14px; color:#2b6cb0; font-weight:bold;">(${pr}%)</span>`; 
         document.getElementById('totalEvaluationAmount').innerHTML = `<span style="color:${stockEvalColor};">${te.toLocaleString()} 원</span> <span style="font-size:14px; color:${stockEvalColor}; font-weight:bold;">(${er}%)</span>`; 
-        // -------------------------------
         
         let cpi=document.getElementById('currentPrice'); 
         cpi.style.color = cp===0||globalCalculatedQty===0 ? "#333" : (cp>globalCalculatedAvgPrice ? "#e53e3e" : (cp<globalCalculatedAvgPrice ? "#3182ce" : "#333")); 
@@ -452,6 +457,7 @@
         document.getElementById('currentBalance').innerText=cb.toLocaleString()+" 원"; 
         let dSm=document.getElementById('displaySeedMoney'); if(dSm) dSm.innerText = totalSm.toLocaleString() + " 원";
     }
+
 function openUserDashboard() {
     const currentUser = document.getElementById('userSelect').value;
     if (!currentUser) return alert('사용자를 선택해 주세요.');
@@ -496,7 +502,6 @@ function openUserDashboard() {
         }
     });
 
-    // 계좌별 총 매입금액 및 총 평가금액 계산
     let accountSums = {};
     Object.keys(accountsData).forEach(acc => {
         accountSums[acc] = { purchase: 0, eval: 0 };
@@ -504,8 +509,6 @@ function openUserDashboard() {
             let st = accountsData[acc][stock];
             if (st.currentQty > 0) {
                 st.totalPurchaseAmount = st.currentAvgPrice * st.currentQty;
-                
-                // 현재가 설정 (저장된 가격이 없으면 평단가로 대체)
                 let cpStr = stockPrices[stock];
                 let currentPrice = cpStr ? parseFloat(String(cpStr).replace(/,/g,'')) : st.currentAvgPrice;
                 st.currentPrice = currentPrice;
@@ -518,37 +521,64 @@ function openUserDashboard() {
     });
 
     let hasPortfolioData = false;
-            Object.keys(accountsData).sort().forEach(acc => {
+    Object.keys(accountsData).sort().forEach(acc => {
         const stocksInAcc = Object.keys(accountsData[acc]).filter(stockName => accountsData[acc][stockName].currentQty > 0);
         if (stocksInAcc.length === 0) return;
 
         let accTotalPurchase = accountSums[acc].purchase;
         let accTotalEval = accountSums[acc].eval;
         
-        // 평가금액 합계에 따른 색상 결정
+        let sm = 10000000;
+        let storedSm = localStorage.getItem(`calculator_seedMoney_${currentUser}_${acc}`);
+        if(storedSm) sm = parseFloat(storedSm.replace(/,/g, '')) || 0;
+        
+        let cb = sm; 
+        userLogs.forEach(l => {
+            if(l.account === acc) {
+                if(l.type === '매수') cb -= l.price * l.qty;
+                if(['매도', '분배금'].includes(l.type)) cb += l.price * l.qty;
+                if(l.type === '입금') cb += l.price * l.qty;
+                if(l.type === '출금') cb -= l.price * l.qty;
+            }
+        });
+
+        // 비중 계산용 분모 정의 (매입자산 총액 / 평가자산 총액)
+        let totalInvestAsset = accTotalPurchase + cb;
+        let totalEvalAsset = accTotalEval + cb;
+        
+        let purchaseRatio = totalInvestAsset > 0 ? ((accTotalPurchase / totalInvestAsset) * 100).toFixed(1) : "0.0";
+        let cashRatio = totalInvestAsset > 0 ? ((cb / totalInvestAsset) * 100).toFixed(1) : "0.0";
+
+        let accTotalRealizedProfit = 0;
+        stocksInAcc.forEach(stockName => {
+            accTotalRealizedProfit += accountsData[acc][stockName].totalProfit;
+        });
+        
         let headerEvalColor = accTotalEval > accTotalPurchase ? "#e53e3e" : (accTotalEval < accTotalPurchase ? "#3182ce" : "#333");
 
-        // 💡 손익금 및 손익률 계산 추가
         let accProfit = accTotalEval - accTotalPurchase;
         let accProfitRate = accTotalPurchase > 0 ? ((accProfit / accTotalPurchase) * 100).toFixed(2) : "0.00";
-        let profitSign = accProfit > 0 ? "+" : ""; // 양수일 때만 + 기호 추가
+        let profitSign = accProfit > 0 ? "+" : ""; 
+
+        let realizedColor = accTotalRealizedProfit > 0 ? "#e53e3e" : (accTotalRealizedProfit < 0 ? "#3182ce" : "#333");
+        let realizedSign = accTotalRealizedProfit > 0 ? "+" : "";
 
         const trHeader = document.createElement('tr');
         trHeader.innerHTML = `
             <td colspan="4" style="background-color: #edf2f7; font-weight: bold; color: #333; text-align: left; padding: 8px 10px; border-top: 2px solid #cbd5e0; vertical-align: middle;">📁 계좌: ${acc}</td>
             <td style="background-color: #edf2f7; font-weight: bold; color: #333; text-align: left; padding: 8px 4px; border-top: 2px solid #cbd5e0; vertical-align: middle;">
-                ${accTotalPurchase.toLocaleString()} 원
+                <div style="color: #2b6cb0;">${accTotalPurchase.toLocaleString()} 원 <span style="font-size: 11px;">(${purchaseRatio}%)</span></div>
+                <div style="font-size: 11px; margin-top: 4px; color: #718096; font-weight: normal;">+예수금: ${cb.toLocaleString()} 원 <span style="font-weight: bold;">(${cashRatio}%)</span></div>
             </td>
             <td style="background-color: #edf2f7; font-weight: bold; color: ${headerEvalColor}; text-align: left; padding: 8px 4px; border-top: 2px solid #cbd5e0; vertical-align: middle;">
                 ${accTotalEval.toLocaleString()} 원
                 <div style="font-size: 11px; margin-top: 2px;">(${profitSign}${accProfit.toLocaleString()} 원 / ${profitSign}${accProfitRate}%)</div>
             </td>
-            <td style="background-color: #edf2f7; border-top: 2px solid #cbd5e0;"></td>
+            <td class="text-right" style="background-color: #edf2f7; font-weight: bold; color: ${realizedColor}; padding: 8px 8px 8px 4px; border-top: 2px solid #cbd5e0; vertical-align: middle;">
+                ${realizedSign}${accTotalRealizedProfit.toLocaleString()} 원
+            </td>
         `;
         tbodyPortfolio.appendChild(trHeader);
-
-
-
 
         stocksInAcc.forEach(stockName => {
             let data = accountsData[acc][stockName]; hasPortfolioData = true;
@@ -556,9 +586,9 @@ function openUserDashboard() {
             const targetStockObj = (accountStocksMap[`${currentUser}_${acc}`] || []).find(s => s.name === stockName);
             const codeDisplay = (targetStockObj && targetStockObj.code) ? `(${targetStockObj.code})` : '';
             
-            // 해당 계좌 안에서의 자산 비중 계산
-            let proportionRatePurchase = accTotalPurchase > 0 ? ((data.totalPurchaseAmount / accTotalPurchase) * 100).toFixed(1) : "0.0";
-            let proportionRateEval = accTotalEval > 0 ? ((data.totalEvalAmount / accTotalEval) * 100).toFixed(1) : "0.0";
+            // 각 종목별 비중 계산 분모에 예수금 반영
+            let proportionRatePurchase = totalInvestAsset > 0 ? ((data.totalPurchaseAmount / totalInvestAsset) * 100).toFixed(1) : "0.0";
+            let proportionRateEval = totalEvalAsset > 0 ? ((data.totalEvalAmount / totalEvalAsset) * 100).toFixed(1) : "0.0";
 
             let evalColor = data.totalEvalAmount > data.totalPurchaseAmount ? "#e53e3e" : (data.totalEvalAmount < data.totalPurchaseAmount ? "#3182ce" : "#333");
 
@@ -647,7 +677,6 @@ function openUserDashboard() {
     document.getElementById('dashboardModal').style.display = 'flex';
 }
 
-
     function openStockDashboard() {
         const currentUser = document.getElementById('userSelect').value, currentStock = document.getElementById('stockSelect').value;
         if (!currentUser) return alert('사용자를 선택해 주세요.');
@@ -703,7 +732,6 @@ function openUserDashboard() {
             }
         });
 
-        // 7열로 구조화 및 th 넓이 비율 조절 (보유수량, 평균단가, 현재가 줄이고 금액 부분 넓힘)
         const tableHeader = document.querySelector('#stockDashboardModal thead tr');
         tableHeader.innerHTML = `<th style="width:14%;">계좌명</th><th style="width:10%;">보유수량</th><th style="width:12%;">평균단가</th><th style="width:12%;">현재가</th><th style="width:18%;">총 매입금액</th><th style="width:18%;">총 평가금액</th><th style="width:16%;">총 실현손익</th>`;
 
@@ -813,14 +841,10 @@ function openUserDashboard() {
         document.getElementById('totalQuantity').innerText=cq.toLocaleString()+" 주"; document.getElementById('avgPrice').innerText=cap.toLocaleString()+" 원"; let tps=document.getElementById('totalProfit'); tps.innerText=tp.toLocaleString()+" 원"; tps.className=tp>0?"plus":(tp<0?"minus":""); document.getElementById('totalDividend').innerText=td>0?"+"+td.toLocaleString()+" 원":"0 원"; globalCalculatedAvgPrice=cap; globalCalculatedQty=cq; if(document.getElementById('tradeType').value==='분배금'&&editIndex===-1) document.getElementById('tradeQty').value=cq; calculateRealtimeMetrics();
     }
 
-    // ==========================================
-    // [종목 불러오기 모달 관련 함수]
-    // ==========================================
     function openStockLoadModal() {
         let allStocks = [];
         let uniqueCheck = new Set();
         
-        // 모든 계좌를 순회하며 종목 수집 (중복 제거)
         Object.values(accountStocksMap).forEach(stocks => {
             stocks.forEach(s => {
                 let key = s.name + "_" + (s.code || "");
@@ -837,7 +861,6 @@ function openUserDashboard() {
         if (allStocks.length === 0) {
             listContainer.innerHTML = '<div style="text-align:center; padding:15px; color:#718096; font-size:13px;">등록된 종목이 없습니다.</div>';
         } else {
-            // 이름 가나다순으로 정렬하여 렌더링
             allStocks.sort((a, b) => a.name.localeCompare(b.name)).forEach(s => {
                 let codeText = s.code ? `(${s.code})` : '';
                 let btn = document.createElement('button');
@@ -849,7 +872,6 @@ function openUserDashboard() {
                 listContainer.appendChild(btn);
             });
         }
-        
         document.getElementById('stockLoadModal').style.display = 'flex';
     }
 
@@ -862,7 +884,7 @@ function openUserDashboard() {
     function selectStockToLoad(name, code) {
         document.getElementById('newStockName').value = name;
         document.getElementById('newStockCode').value = code;
-        closeStockLoadModal(); // 입력 후 모달 닫기
+        closeStockLoadModal();
     }
 </script>
 </body>
