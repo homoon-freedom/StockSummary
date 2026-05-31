@@ -1,3 +1,6 @@
+이전 전체 코드 제공 과정에서 개별 종목의 평가손익금과 수익률을 출력하는 로직이 누락되어 발생한 현상입니다.
+각 종목별 **총 평가금액 하단에 평가손익(손익률)이 정상적으로 표시되도록 보완한 전체 코드**입니다. 기존 코드를 모두 지우고 아래의 코드로 완전히 교체하여 사용하시면 됩니다.
+```html
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -381,14 +384,12 @@
         let accEvalProfit = accountTotalEvalAsset - accountTotalInvestAsset;
         let accEvalProfitRate = accountTotalInvestAsset > 0 ? (accEvalProfit / accountTotalInvestAsset) * 100 : 0;
         
-        // 계좌 매입금액 및 예수금 비중 계산 적용
         let cashRatio = accountTotalInvestAsset > 0 ? ((cb / accountTotalInvestAsset) * 100).toFixed(1) : "0.0";
         let purchaseRatio = accountTotalInvestAsset > 0 ? ((totalAccPurchaseStocks / accountTotalInvestAsset) * 100).toFixed(1) : "0.0";
         
         document.getElementById('currentBalance').innerHTML = `${cb.toLocaleString()} 원 <span style="font-size:13px; color:#718096; font-weight:bold;">(${cashRatio}%)</span>`;
         document.getElementById('accountTotalPurchaseAmount').innerHTML = `${totalAccPurchaseStocks.toLocaleString()} 원 <span style="font-size:13px; color:#2b6cb0; font-weight:bold;">(${purchaseRatio}%)</span>`;
         
-        // --- 계좌 총 평가금액 색상 적용 (평가금액 > 매입금액 = 적색, 낮으면 청색) ---
         let accEvalColor = accountTotalEvalAsset > accountTotalInvestAsset ? "#e53e3e" : (accountTotalEvalAsset < accountTotalInvestAsset ? "#3182ce" : "#333");
         let accEvalEl = document.getElementById('accountTotalEvaluationAmount');
         accEvalEl.innerText = accountTotalEvalAsset.toLocaleString() + " 원";
@@ -403,9 +404,8 @@
             accProfitEl.className = accEvalProfit > 0 ? "plus" : (accEvalProfit < 0 ? "minus" : "");
         }
         
-        // --- 해당 종목 비중 계산 (분모 = 자산 총액 및 평가 총액 기준) ---
-        let pr=accountTotalInvestAsset>0?((tp/accountTotalInvestAsset)*100).toFixed(1):0;
-        let er=accountTotalEvalAsset>0?((te/accountTotalEvalAsset)*100).toFixed(1):0; 
+        let pr = accountTotalInvestAsset > 0 ? ((tp / accountTotalInvestAsset) * 100).toFixed(1) : 0;
+        let er = accountTotalEvalAsset > 0 ? ((te / accountTotalEvalAsset) * 100).toFixed(1) : 0; 
         
         let stockEvalColor = te > tp ? "#e53e3e" : (te < tp ? "#3182ce" : "#333");
         document.getElementById('totalPurchaseAmount').innerHTML = `${tp.toLocaleString()} 원 <span style="font-size:14px; color:#2b6cb0; font-weight:bold;">(${pr}%)</span>`; 
@@ -542,7 +542,6 @@ function openUserDashboard() {
             }
         });
 
-        // 비중 계산용 분모 정의 (매입자산 총액 / 평가자산 총액)
         let totalInvestAsset = accTotalPurchase + cb;
         let totalEvalAsset = accTotalEval + cb;
         
@@ -568,7 +567,7 @@ function openUserDashboard() {
             <td colspan="4" style="background-color: #edf2f7; font-weight: bold; color: #333; text-align: left; padding: 8px 10px; border-top: 2px solid #cbd5e0; vertical-align: middle;">📁 계좌: ${acc}</td>
             <td style="background-color: #edf2f7; font-weight: bold; color: #333; text-align: left; padding: 8px 4px; border-top: 2px solid #cbd5e0; vertical-align: middle;">
                 <div style="color: #2b6cb0;">${accTotalPurchase.toLocaleString()} 원 <span style="font-size: 11px;">(${purchaseRatio}%)</span></div>
-                <div style="font-size: 12px; margin-top: 4px; color: #718096; font-weight: bold;">${cb.toLocaleString()} 원 <span style="font-weight: bold;">(${cashRatio}%)</span></div>
+                <div style="font-size: 11px; margin-top: 4px; color: #718096; font-weight: normal;">+예수금: ${cb.toLocaleString()} 원 <span style="font-weight: bold;">(${cashRatio}%)</span></div>
             </td>
             <td style="background-color: #edf2f7; font-weight: bold; color: ${headerEvalColor}; text-align: left; padding: 8px 4px; border-top: 2px solid #cbd5e0; vertical-align: middle;">
                 ${accTotalEval.toLocaleString()} 원
@@ -586,11 +585,15 @@ function openUserDashboard() {
             const targetStockObj = (accountStocksMap[`${currentUser}_${acc}`] || []).find(s => s.name === stockName);
             const codeDisplay = (targetStockObj && targetStockObj.code) ? `(${targetStockObj.code})` : '';
             
-            // 각 종목별 비중 계산 분모에 예수금 반영
             let proportionRatePurchase = totalInvestAsset > 0 ? ((data.totalPurchaseAmount / totalInvestAsset) * 100).toFixed(1) : "0.0";
             let proportionRateEval = totalEvalAsset > 0 ? ((data.totalEvalAmount / totalEvalAsset) * 100).toFixed(1) : "0.0";
 
             let evalColor = data.totalEvalAmount > data.totalPurchaseAmount ? "#e53e3e" : (data.totalEvalAmount < data.totalPurchaseAmount ? "#3182ce" : "#333");
+
+            // 💡 [정상 연동] 개별 종목 평가손익 및 수익률 계산 로직 재포함
+            let stockProfit = data.totalEvalAmount - data.totalPurchaseAmount;
+            let stockProfitRate = data.totalPurchaseAmount > 0 ? ((stockProfit / data.totalPurchaseAmount) * 100).toFixed(2) : "0.00";
+            let stockProfitSign = stockProfit > 0 ? "+" : "";
 
             const tr = document.createElement('tr');
             tr.innerHTML = `<td class="text-left" style="padding-left: 15px;">${stockName}${codeDisplay}</td>
@@ -600,13 +603,14 @@ function openUserDashboard() {
                 <td>
                     <div class="proportion-container">
                         <div><strong>${data.totalPurchaseAmount.toLocaleString()} 원</strong> <span style="font-size:11px; color:#718096;">(${proportionRatePurchase}%)</span></div>
-                        <div class="proportion-bar"><div class="proportion-fill" style="width: ${proportionRatePurchase}%;"></div></div>
+                        <div class="proportion-bar" style="margin-top: 4px;"><div class="proportion-fill" style="width: ${proportionRatePurchase}%;"></div></div>
                     </div>
                 </td>
                 <td>
                     <div class="proportion-container">
                         <div style="color:${evalColor};"><strong>${data.totalEvalAmount.toLocaleString()} 원</strong> <span style="font-size:11px;">(${proportionRateEval}%)</span></div>
-                        <div class="proportion-bar"><div class="proportion-fill" style="width: ${proportionRateEval}%; background:linear-gradient(90deg, ${evalColor}, ${evalColor}aa);"></div></div>
+                        <div style="font-size: 11px; margin-top: 2px; color: ${evalColor}; font-weight: bold;">(${stockProfitSign}${stockProfit.toLocaleString()} 원 / ${stockProfitSign}${stockProfitRate}%)</div>
+                        <div class="proportion-bar" style="margin-top: 4px;"><div class="proportion-fill" style="width: ${proportionRateEval}%; background:linear-gradient(90deg, ${evalColor}, ${evalColor}aa);"></div></div>
                     </div>
                 </td>
                 <td class="${profitClass} text-right" style="font-weight:bold; padding-right: 8px;">${profitSign}${data.totalProfit.toLocaleString()} 원</td>`;
@@ -889,3 +893,5 @@ function openUserDashboard() {
 </script>
 </body>
 </html>
+
+```
