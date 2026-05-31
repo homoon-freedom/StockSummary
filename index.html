@@ -65,8 +65,7 @@
 <div class="container">
     <h2>주식 매매 내역 및 평단가 계산기</h2>
     <button class="btn-toggle btn-toggle-config" onclick="toggleConfigSection()"><span id="configIcon">⚙️</span> <span id="configText">사용자/계좌/종목 설정 열기</span></button>
-    
-    <div class="config-section" id="configSection">
+        <div class="config-section" id="configSection">
         <div class="config-row-group">
             <div class="config-box"><div class="title-label">👤 사용자 관리</div><div class="config-group"><label>등록된 사용자 리스트</label><select id="userSelect" onchange="handleUserChange(this.value)"></select></div><button class="btn-full btn-del" onclick="deleteUser()">선택된 사용자 삭제</button><div class="config-group" style="margin-top:10px;"><label>새로 추가할 사용자 이름</label><input type="text" id="newUserName" placeholder="예: 홍길동"></div><button class="btn-full btn-add" onclick="addUser()">새 사용자 등록</button></div>
             <div class="config-box"><div class="title-label">🏦 계좌 관리 (현재 사용자 전용)</div><div class="config-group"><label>등록된 계좌 리스트</label><select id="accountSelect" onchange="handleAccountChange(this.value)"></select></div><button class="btn-full btn-del" onclick="deleteAccount()">선택된 계좌 삭제</button><div class="config-group" style="margin-top:10px;"><label>새로 추가할 계좌명</label><input type="text" id="newAccountName" placeholder="예: ISA계좌, 연금저축"></div><button class="btn-full btn-add" onclick="addAccount()">새 계좌 등록</button></div>
@@ -95,7 +94,6 @@
             <button class="btn-full btn-add" style="margin-top:5px;" onclick="addStock()">등록/수정사항 저장</button>
         </div>
     </div>
-
     <button class="btn-toggle btn-toggle-input" onclick="toggleInputSection()"><span id="inputIcon">🔽</span> <span id="inputText">매매 데이터 입력창 열기</span></button>
     <div class="input-form" id="inputForm">
         <div style="background-color:#f7fafc;padding:10px;border-radius:4px;border:1px dashed #cbd5e0;margin-bottom:5px;display:flex;flex-direction:column;gap:10px;">
@@ -120,12 +118,10 @@
         </div>
         <button class="btn-submit" id="submitBtn" type="button" onclick="handleSubmit()">내역 추가</button>
     </div>
-
     <div class="dashboard-btn-group">
         <button class="btn-dashboard" onclick="openUserDashboard()">📂 전체 계좌 보유현황 보기</button>
         <button class="btn-dashboard btn-stock-dash" onclick="openStockDashboard()">📊 현재 종목 계좌별 현황</button>
     </div>
-
     <div class="summary-box">
         <div class="summary-item"><label>초기 씨드머니 (원)</label><input type="text" id="seedMoney" value="10,000,000" oninput="formatInputValue(this); saveSeedMoney(); calculateAll();" title="최초 시작 금액을 입력하세요."></div>
         <div class="summary-item"><label>총 적용 씨드머니 (입출금 포함)</label><span id="displaySeedMoney" style="color:#2b6cb0; font-weight:bold;">0 원</span></div>
@@ -133,19 +129,16 @@
         <div class="summary-item"><label>계좌 예수금 (비중)</label><span id="currentBalance">0 원</span></div>
         <div class="summary-item"><label>계좌 총 평가금액</label><span id="accountTotalEvaluationAmount" style="font-weight:bold;">0 원</span></div>
         <div class="summary-item"><label>계좌 총 평가손익 (수익률)</label><span id="accountTotalEvaluationProfit">0 원 (0.00%)</span></div>
-        
-        <div class="summary-item"><label>해당 종목 보유 수량</label><span id="totalQuantity">0 주</span></div>
+                <div class="summary-item"><label>해당 종목 보유 수량</label><span id="totalQuantity">0 주</span></div>
         <div class="summary-item"><label>해당 종목 평단가</label><span id="avgPrice">0 원</span></div>
         <div class="summary-item input-highlight"><label>📊 현재가 입력 (원)</label><input type="text" id="currentPrice" placeholder="조회 중..." oninput="formatInputValue(this); updateStockPriceMap();"></div>
         
         <div class="summary-item"><label>해당종목 매입금액 (매입비중)</label><span id="totalPurchaseAmount">0 원 <span style="font-size:14px; color:#2b6cb0; font-weight:bold;">(0.0%)</span></span></div>
         <div class="summary-item"><label>해당종목 평가금액 (평가비중)</label><span id="totalEvaluationAmount">0 원 <span style="font-size:14px; color:#333; font-weight:bold;">(0.0%)</span></span></div>
-        
-        <div class="summary-item"><label>평가손익 (수익률)</label><span id="evaluationProfit">0 원 (0.00%)</span></div>
+                <div class="summary-item"><label>평가손익 (수익률)</label><span id="evaluationProfit">0 원 (0.00%)</span></div>
         <div class="summary-item"><label>총 실현손익 (해당종목)</label><span id="totalProfit">0 원</span></div>
         <div class="summary-item"><label>총 배당금 (해당종목)</label><span id="totalDividend" style="color:#38a169;font-weight:bold;">0 원</span></div>
     </div>
-
     <div class="quick-select-container">
         <div class="quick-select-row-group">
             <div class="quick-select-row"><label>👤 사용자 전환</label><select class="quick-dropdown" id="quickUserSelect" onchange="handleUserChange(this.value)"></select></div>
@@ -153,7 +146,6 @@
         </div>
         <div class="quick-select-row"><label>🔍 종목 전환</label><select class="quick-dropdown" id="quickStockSelect" onchange="selectStockFromQuickSelect(this.value)"></select></div>
     </div>
-
     <div class="view-title" id="viewTitle" style="margin-bottom:15px;"></div>
     <div>
         <table>
@@ -162,7 +154,6 @@
         </table>
     </div>
 </div>
-
 <div class="modal-overlay" id="dashboardModal" onclick="closeUserDashboard(event)">
     <div class="modal-content" onclick="event.stopPropagation()">
         <div class="modal-header"><div class="modal-title" id="modalTitle">계좌 보유 현황</div><button class="modal-close" onclick="closeUserDashboard()">×</button></div>
@@ -187,7 +178,6 @@
         <div id="tab-dividend" class="tab-content" style="overflow-x:auto;"><table class="modal-table"><thead><tr><th style="width:12%;">기간(월)</th><th style="width:13%;">계좌명</th><th style="width:30%;">종목명</th><th style="width:12%;">날짜</th><th style="width:8%;">주식수</th><th style="width:10%;">주당배당금</th><th style="width:15%;">배당금액</th></tr></thead><tbody id="modalDividendBody"></tbody></table></div>
     </div>
 </div>
-
 <div class="modal-overlay" id="stockDashboardModal" onclick="closeStockDashboard(event)">
     <div class="modal-content" onclick="event.stopPropagation()">
         <div class="modal-header"><div class="modal-title" id="stockModalTitle">종목 계좌별 보유 현황</div><button class="modal-close" onclick="closeStockDashboard(null)">×</button></div>
