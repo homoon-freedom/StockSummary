@@ -92,6 +92,23 @@
             </div>
             <button class="btn-full btn-add" style="margin-top:5px;" onclick="addStock()">등록/수정사항 저장</button>
         </div>
+
+        <div class="config-box" style="margin-top: 5px;">
+            <div class="title-label">💾 데이터 백업 및 복구 (기기 연동)</div>
+            <div style="font-size:11px; color:#718096; margin-bottom:4px; line-height: 1.4;">
+                현재 기기의 모든 데이터를 JSON 파일로 저장하거나, 백업 파일을 불러와 다른 기기에 데이터를 완전히 덮어쓸 수 있습니다. (아이폰/아이패드는 '파일' 앱 연동 가능)
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button class="btn-full" style="background-color:#38a169; color:white; height: 40px; border:none; border-radius:4px; font-weight:bold; cursor:pointer;" onclick="exportData()">📤 데이터 내보내기</button>
+                <label class="btn-full" style="background-color:#d69e2e; color:white; display:flex; align-items:center; justify-content:center; cursor:pointer; height: 40px; margin: 0; border-radius:4px; font-weight:bold; width:100%; box-sizing:border-box; font-size:12px;">
+                    📥 데이터 불러오기
+                    <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importData(event)">
+                </label>
+            </div>
+            <div style="font-size:11px; color:#e53e3e; margin-top:2px; font-weight: bold;">
+                ※ 경고: 불러오기를 진행하면 현재 기기에 있는 기존 데이터는 모두 삭제되고 덮어쓰기 됩니다.
+            </div>
+        </div>
     </div>
 
     <button class="btn-toggle btn-toggle-input" onclick="toggleInputSection()"><span id="inputIcon">🔽</span> <span id="inputText">매매 데이터 입력창 열기</span></button>
@@ -260,7 +277,6 @@
     let tradeLogs = [], stockPrices = {}, globalCalculatedAvgPrice = 0, globalCalculatedQty = 0, editIndex = -1, selectedTargetIndex = -1;
     let isStockEditMode = false, originalStockName = "";
     
-    // 모달 정렬 전역 상태 변수 및 현재 탭 상태 변수 추가
     let dashboardSort = { field: null, order: 'desc' };
     let currentDashboardTab = 'portfolio';
 
@@ -409,7 +425,6 @@
         let accEvalProfit = accountTotalEvalAsset - accountTotalInvestAsset;
         let accEvalProfitRate = accountTotalInvestAsset > 0 ? (accEvalProfit / accountTotalInvestAsset) * 100 : 0;
         
-        // 매입금액과 예수금에만 비중 추가
         let cashRatio = accountTotalInvestAsset > 0 ? ((cb / accountTotalInvestAsset) * 100).toFixed(1) : "0.0";
         let purchaseRatio = accountTotalInvestAsset > 0 ? ((totalAccPurchaseStocks / accountTotalInvestAsset) * 100).toFixed(1) : "0.0";
         
@@ -481,7 +496,6 @@
         let dSm=document.getElementById('displaySeedMoney'); if(dSm) dSm.innerText = totalSm.toLocaleString() + " 원";
     }
 
-    // 변경된 정렬 및 탭 전환 처리
     function toggleDashboardSort(field) {
         if(dashboardSort.field === field) {
             dashboardSort.order = dashboardSort.order === 'desc' ? 'asc' : 'desc';
@@ -504,7 +518,7 @@
         document.getElementById('modalTitle').innerText = `[${currentUser}] ${titleText}`;
         
         if(!isReRender) {
-            dashboardSort = { field: null, order: 'desc' }; // 모달을 새로 열 때는 정렬 초기화
+            dashboardSort = { field: null, order: 'desc' }; 
         }
 
         switchDashboardTab(targetTab, null);
@@ -554,7 +568,6 @@
         let accountSums = {};
         Object.keys(accountsData).forEach(acc => {
             accountSums[acc] = { purchase: 0, eval: 0 };
-            // 1단계: 계좌 내 각 종목의 총 매입금액 합산
             Object.keys(accountsData[acc]).forEach(stock => {
                 let st = accountsData[acc][stock];
                 if (st.currentQty > 0) {
@@ -563,7 +576,6 @@
                 }
             });
             
-            // 2단계: 계좌 총 매입금액(accPurchase)을 활용해 평가금액 계산 (펀드 반영)
             Object.keys(accountsData[acc]).forEach(stock => {
                 let st = accountsData[acc][stock];
                 if (st.currentQty > 0) {
@@ -573,7 +585,6 @@
                     const targetStockObj = (accountStocksMap[`${currentUser}_${acc}`] || []).find(s => s.name === stock);
                     let isFund = targetStockObj && targetStockObj.code && (targetStockObj.code === '펀드' || targetStockObj.code.includes('펀드'));
                     
-                    // 펀드의 경우 계좌의 총 매입금액을 현재가로 강제
                     if (isFund) {
                         currentPrice = accountSums[acc].purchase;
                     }
@@ -621,7 +632,6 @@
             let realizedColor = accTotalRealizedProfit > 0 ? "#e53e3e" : (accTotalRealizedProfit < 0 ? "#3182ce" : "#333");
             let realizedSign = accTotalRealizedProfit > 0 ? "+" : "";
 
-            // 정렬 토글 아이콘 설정
             let purchaseSortIcon = dashboardSort.field === 'purchase' ? (dashboardSort.order === 'desc' ? '🔽' : '🔼') : '↕️';
             let profitSortIcon = dashboardSort.field === 'profit' ? (dashboardSort.order === 'desc' ? '🔽' : '🔼') : '↕️';
 
@@ -652,7 +662,6 @@
             `;
             tbodyPortfolio.appendChild(trHeader);
 
-            // 종목들을 배열로 매핑 후 정렬 조건에 따라 정렬 처리
             let stockItems = stocksInAcc.map(stockName => {
                 let data = accountsData[acc][stockName];
                 let evalProfit = data.totalEvalAmount - data.totalPurchaseAmount;
@@ -700,7 +709,6 @@
         const sortedMonths = Object.keys(monthlyData).sort((a, b) => b.localeCompare(a));
         let hasProfit = false, hasDividend = false, currentDivYear = "", yearDivSum = 0, currentProfitYear = "", yearProfitSum = 0, yearBuyCostSum = 0;
 
-        // 적용된 월별 데이터 반복 루프
         sortedMonths.forEach((month, index) => {
             let monthData = monthlyData[month], year = month.substring(0, 4);
 
@@ -807,7 +815,6 @@
             document.getElementById('stockDashboardModal').style.display = 'flex'; return;
         }
 
-        // 선택된 종목이 '펀드'인지 전체 계좌를 돌며 파악
         let currentStockObj = null;
         Object.keys(accountStocksMap).forEach(key => {
             if (key.startsWith(currentUser + "_")) {
@@ -817,7 +824,6 @@
         });
         const isFund = currentStockObj && currentStockObj.code && (currentStockObj.code === '펀드' || currentStockObj.code.includes('펀드'));
 
-        // 펀드인 경우 각 계좌별 총 매입금액을 계산
         let accTotalPurchasesMap = {};
         if (isFund) {
             let tempAccData = {};
@@ -869,7 +875,6 @@
             let data = accountsData[acc]; if (data.currentQty === 0) return;
             let purchase = data.currentAvgPrice * data.currentQty;
             
-            // 펀드인 경우 계좌 총 매입금액을 현재가로 적용
             let finalCurrentPrice = isFund ? (accTotalPurchasesMap[acc] || 0) : currentPriceVal;
             let evaluation = finalCurrentPrice * data.currentQty;
             
@@ -1037,13 +1042,11 @@ function calculateAll() {
     globalCalculatedAvgPrice = cap;
     globalCalculatedQty = cq;
     
-    // --- 종목코드가 펀드인 경우 현재가 처리 ---
     let isFund = actS?.code && (actS.code === '펀드' || actS.code.includes('펀드'));
     if (isFund) {
-        // 현재가를 해당계좌 총 매입금액(accTotalPurchase)으로 강제 입력
         document.getElementById('currentPrice').value = accTotalPurchase.toLocaleString();
         stockPrices[s] = accTotalPurchase.toString();
-        document.getElementById('currentPrice').style.color = "#2b6cb0"; // 반영됨을 나타내는 색상
+        document.getElementById('currentPrice').style.color = "#2b6cb0"; 
     } else if (actS?.code) {
         fetchCurrentPrice(actS.code);
     } else {
@@ -1054,14 +1057,10 @@ function calculateAll() {
     calculateRealtimeMetrics();
 }
 
-
     function openStockLoadModal() {
         let stockMap = {};
-        
-        // accountStocksMap 객체를 순회하며 고유한 종목만 수집 (사용자/계좌 정보 제거)
         Object.values(accountStocksMap).forEach(stocks => {
             stocks.forEach(s => {
-                // 종목명 기준으로 중복 제거 (이름이 같으면 덮어쓰기 형태로 하나만 유지)
                 if (!stockMap[s.name]) {
                     stockMap[s.name] = { name: s.name, code: s.code || "" };
                 }
@@ -1076,19 +1075,15 @@ function calculateAll() {
         if (allStocks.length === 0) {
             listContainer.innerHTML = '<div style="text-align:center; padding:15px; color:#718096; font-size:13px;">등록된 종목이 없습니다.</div>';
         } else {
-            // 가나다순 정렬 후 렌더링
             allStocks.sort((a, b) => a.name.localeCompare(b.name)).forEach(s => {
                 let codeText = s.code ? `(${s.code})` : '';
-                
                 let btn = document.createElement('button');
                 btn.style.cssText = "width:100%; text-align:left; padding:10px 15px; background:#f7fafc; border:1px solid #e2e8f0; border-radius:4px; cursor:pointer; font-size:14px; font-weight:bold; color:#4a5568; margin-bottom:4px; transition: background-color 0.2s;";
-                
                 btn.innerHTML = `<span>➕ ${s.name} <span style="color:#718096; font-weight:normal; font-size:12px; margin-left:4px;">${codeText}</span></span>`;
                                  
                 btn.onmouseover = () => btn.style.backgroundColor = '#edf2f7';
                 btn.onmouseout = () => btn.style.backgroundColor = '#f7fafc';
                 btn.onclick = () => selectStockToLoad(s.name, s.code);
-                
                 listContainer.appendChild(btn);
             });
         }
@@ -1105,6 +1100,75 @@ function calculateAll() {
         document.getElementById('newStockName').value = name;
         document.getElementById('newStockCode').value = code;
         closeStockLoadModal();
+    }
+
+    // ▼▼▼ 데이터 내보내기 및 불러오기 신규 추가 로직 ▼▼▼
+    function exportData() {
+        let exportObj = {};
+        for (let i = 0; i < localStorage.length; i++) {
+            let key = localStorage.key(i);
+            if (key.startsWith('calculator_')) {
+                exportObj[key] = localStorage.getItem(key);
+            }
+        }
+        
+        if (Object.keys(exportObj).length === 0) {
+            alert("내보낼 백업 데이터가 존재하지 않습니다.");
+            return;
+        }
+
+        let dataStr = JSON.stringify(exportObj);
+        let blob = new Blob([dataStr], { type: "application/json" });
+        let url = URL.createObjectURL(blob);
+        
+        let a = document.createElement('a');
+        a.href = url;
+        let today = new Date().toISOString().substring(0, 10);
+        a.download = `stock_backup_${today}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    function importData(event) {
+        let file = event.target.files[0];
+        if (!file) return;
+
+        if (!confirm("백업 파일을 불러오면 현재 기기에 저장된 자산 데이터 및 설정이 완전히 초기화되고 덮어쓰기 됩니다. 계속 진행하시겠습니까?")) {
+            event.target.value = '';
+            return;
+        }
+
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                let importedData = JSON.parse(e.target.result);
+                let hasValidData = Object.keys(importedData).some(key => key.startsWith('calculator_'));
+                if (!hasValidData) throw new Error("유효한 데이터 형식이 아닙니다.");
+
+                let keysToRemove = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    if (localStorage.key(i).startsWith('calculator_')) keysToRemove.push(localStorage.key(i));
+                }
+                keysToRemove.forEach(k => localStorage.removeItem(k));
+
+                for (let key in importedData) {
+                    if (key.startsWith('calculator_')) {
+                        localStorage.setItem(key, importedData[key]);
+                    }
+                }
+
+                alert('데이터 연동이 완료되었습니다. 변경 사항을 반영하기 위해 페이지를 새로고침합니다.');
+                location.reload();
+
+            } catch (error) {
+                alert('파일을 읽는 과정에서 오류가 발생했습니다. 올바른 계산기 백업 파일(.json)인지 확인해 주세요.');
+                console.error(error);
+            }
+            event.target.value = '';
+        };
+        reader.readAsText(file);
     }
 </script>
 </body>
