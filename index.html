@@ -209,7 +209,7 @@
                 <tbody id="modalTableBody"></tbody>
             </table>
         </div>
-        <div id="tab-profit" class="tab-content" style="overflow-x:auto;"><table class="modal-table"><thead><tr><th style="width:25%;">기간(월)</th><th style="width:15%;">계좌명</th><th style="width:35%;">종목명</th><th style="width:25%;">실현손익</th></tr></thead><tbody id="modalProfitBody"></tbody></table></div>
+        <div id="tab-profit" class="tab-content" style="overflow-x:auto;"><table class="modal-table"><thead><tr><th style="width:15%;">기간(월)</th><th style="width:15%;">매도일자</th><th style="width:15%;">계좌명</th><th style="width:30%;">종목명</th><th style="width:25%;">실현손익</th></tr></thead><tbody id="modalProfitBody"></tbody></table></div>
         <div id="tab-dividend" class="tab-content" style="overflow-x:auto;"><table class="modal-table"><thead><tr><th style="width:12%;">기간(월)</th><th style="width:13%;">계좌명</th><th style="width:30%;">종목명</th><th style="width:12%;">날짜</th><th style="width:8%;">주식수</th><th style="width:10%;">주당배당금</th><th style="width:15%;">배당금액</th></tr></thead><tbody id="modalDividendBody"></tbody></table></div>
     </div>
 </div>
@@ -515,7 +515,7 @@
         const userLogs = tradeLogs.filter(log => log.user === currentUser);
         if(userLogs.length === 0) {
             tbodyPortfolio.innerHTML = `<tr><td colspan="7" class="text-center" style="color:#718096; padding:20px;">매매 내역이 존재하지 않습니다.</td></tr>`;
-            tbodyProfit.innerHTML = `<tr><td colspan="4" class="text-center" style="color:#718096; padding:20px;">매매 내역이 존재하지 않습니다.</td></tr>`;
+            tbodyProfit.innerHTML = `<tr><td colspan="5" class="text-center" style="color:#718096; padding:20px;">매매 내역이 존재하지 않습니다.</td></tr>`;
             tbodyDividend.innerHTML = `<tr><td colspan="7" class="text-center" style="color:#718096; padding:20px;">매매 내역이 존재하지 않습니다.</td></tr>`;
             document.getElementById('dashboardModal').style.display = 'flex'; return;
         }
@@ -536,7 +536,7 @@
                 if (log.qty <= st.currentQty) {
                     let profit = (log.price - st.currentAvgPrice) * log.qty;
                     st.totalProfit += profit; monthlyData[monthKey].profit += profit; 
-                    monthlyData[monthKey].profitDetails.push({ acc: log.account, stock: log.stock, amt: profit }); 
+                    monthlyData[monthKey].profitDetails.push({ date: log.date, acc: log.account, stock: log.stock, amt: profit }); 
                     st.currentQty -= log.qty; if (st.currentQty === 0) st.currentAvgPrice = 0;
                 }
             } else if (log.type === '분배금') {
@@ -707,7 +707,7 @@
 
             if (currentProfitYear !== "" && year !== currentProfitYear) {
                 const trYearP = document.createElement('tr'); let yClass = yearProfitSum > 0 ? "plus" : (yearProfitSum < 0 ? "minus" : ""), ySign = yearProfitSum > 0 ? "+" : "";
-                trYearP.innerHTML = `<td colspan="3" style="background:#e2e8f0; font-weight:bold; font-size:14px; text-align:center; color: #2b6cb0; padding: 12px;">${currentProfitYear}년 총 실현손익 합계</td><td class="${yClass}" style="background:#e2e8f0; font-weight:bold; font-size:14px; text-align:right; padding-right:15px;">${ySign}${yearProfitSum.toLocaleString()} 원</td>`;
+                trYearP.innerHTML = `<td colspan="4" style="background:#e2e8f0; font-weight:bold; font-size:14px; text-align:center; color: #2b6cb0; padding: 12px;">${currentProfitYear}년 총 실현손익 합계</td><td class="${yClass}" style="background:#e2e8f0; font-weight:bold; font-size:14px; text-align:right; padding-right:15px;">${ySign}${yearProfitSum.toLocaleString()} 원</td>`;
                 tbodyProfit.appendChild(trYearP); yearProfitSum = 0; 
             }
             currentProfitYear = year; yearProfitSum += monthData.profit;
@@ -717,7 +717,7 @@
                 const trMonthSumP = document.createElement('tr');
                 trMonthSumP.innerHTML = `
                     <td rowspan="${monthData.profitDetails.length + 1}" style="text-align: center; font-weight: bold; font-size: 14px; color: #2d3748; vertical-align: middle; background-color: #fff; border-bottom: 2px solid #e2e8f0;">${month}</td>
-                    <td colspan="2" style="text-align: center; font-weight: bold; font-size: 13px; color: #4a5568; background-color: #f7fafc; padding: 10px;">월 합계</td>
+                    <td colspan="3" style="text-align: center; font-weight: bold; font-size: 13px; color: #4a5568; background-color: #f7fafc; padding: 10px;">월 합계</td>
                     <td class="${profitClass}" style="text-align: right; font-weight: bold; font-size: 14px; background-color: #f7fafc; padding: 10px 15px 10px 10px;">${profitSign}${monthData.profit.toLocaleString()} 원</td>`;
                 tbodyProfit.appendChild(trMonthSumP);
 
@@ -726,7 +726,8 @@
                     let pClass = p.amt > 0 ? "plus" : (p.amt < 0 ? "minus" : ""), pSign = p.amt > 0 ? "+" : "";
                     const trDetailP = document.createElement('tr');
                     trDetailP.innerHTML = `
-                        <td style="text-align: left; font-size: 13px; font-weight: bold; color: #4a5568; padding: 10px 10px 10px 15px; ${borderStyle}">📁 ${p.acc}</td>
+                        <td style="text-align: center; font-size: 12px; color: #718096; padding: 10px 5px; ${borderStyle}">${p.date}</td>
+                        <td style="text-align: left; font-size: 13px; font-weight: bold; color: #4a5568; padding: 10px 5px; ${borderStyle}">📁 ${p.acc}</td>
                         <td style="text-align: left; font-size: 13px; color: #333; padding: 10px 5px; ${borderStyle}">${p.stock}</td>
                         <td class="${pClass}" style="text-align: right; font-size: 13px; font-weight: bold; padding: 10px 15px 10px 5px; ${borderStyle}">${pSign}${p.amt.toLocaleString()} 원</td>`;
                     tbodyProfit.appendChild(trDetailP);
@@ -762,9 +763,9 @@
         }
         if (hasProfit && currentProfitYear !== "") {
             const trLastYearP = document.createElement('tr'); let yClass = yearProfitSum > 0 ? "plus" : (yearProfitSum < 0 ? "minus" : ""), ySign = yearProfitSum > 0 ? "+" : "";
-            trLastYearP.innerHTML = `<td colspan="3" style="background:#e2e8f0; font-weight:bold; font-size:14px; text-align:center; color: #2b6cb0; padding: 12px;">${currentProfitYear}년 총 실현손익 합계</td><td class="${yClass}" style="background:#e2e8f0; font-weight:bold; font-size:14px; text-align:right; padding-right:15px;">${ySign}${yearProfitSum.toLocaleString()} 원</td>`; tbodyProfit.appendChild(trLastYearP);
+            trLastYearP.innerHTML = `<td colspan="4" style="background:#e2e8f0; font-weight:bold; font-size:14px; text-align:center; color: #2b6cb0; padding: 12px;">${currentProfitYear}년 총 실현손익 합계</td><td class="${yClass}" style="background:#e2e8f0; font-weight:bold; font-size:14px; text-align:right; padding-right:15px;">${ySign}${yearProfitSum.toLocaleString()} 원</td>`; tbodyProfit.appendChild(trLastYearP);
         }
-        if(!hasProfit) tbodyProfit.innerHTML = `<tr><td colspan="4" class="text-center" style="color:#718096; padding:15px;">해당 내역이 없습니다.</td></tr>`;
+        if(!hasProfit) tbodyProfit.innerHTML = `<tr><td colspan="5" class="text-center" style="color:#718096; padding:15px;">해당 내역이 없습니다.</td></tr>`;
         if(!hasDividend) tbodyDividend.innerHTML = `<tr><td colspan="7" class="text-center" style="color:#718096; padding:15px;">해당 내역이 없습니다.</td></tr>`;
         document.getElementById('dashboardModal').style.display = 'flex';
     }
