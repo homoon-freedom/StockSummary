@@ -280,6 +280,9 @@
     let dashboardSort = { field: null, order: 'desc' };
     let currentDashboardTab = 'portfolio';
     let currentDashboardFilter = '전체'; 
+    let expandedPortfolioAccounts = []; 
+    let expandedProfitMonths = []; 
+    let expandedDividendMonths = [];
 
     window.onload = function() { document.getElementById('tradeDate').value = new Date().toISOString().substring(0, 10); loadFromLocalStorage(); renderSelectOptions(); loadSeedMoney(); calculateAll(); };
     function saveToLocalStorage() { localStorage.setItem('calculator_users', JSON.stringify(users)); localStorage.setItem('calculator_userAccountsMap', JSON.stringify(userAccountsMap)); localStorage.setItem('calculator_accountStocksMap', JSON.stringify(accountStocksMap)); localStorage.setItem('calculator_tradeLogs', JSON.stringify(tradeLogs)); localStorage.setItem('calculator_stockPrices', JSON.stringify(stockPrices)); }
@@ -301,7 +304,7 @@
     function handleStockChange(s) { setSelectValues(['stockSelect','quickStockSelect','inputStockSelect'], s, document.getElementById('stockSelect').innerHTML); loadSeedMoney(); calculateAll(); }
     function selectStockFromQuickSelect(s) { handleStockChange(s); }
     
-    function addUser() { let val = document.getElementById('newUserName').value.trim(); if(!val) return alert('이름을 입력하세요.'); if(users.includes(val)) return alert('이미 존재하는 사용자입니다.'); users.push(val); userAccountsMap[val] = ["기본계좌"]; accountStocksMap[`${val}_기본계좌`] = []; document.getElementById('newUserName').value=''; renderSelectOptions(); handleUserChange(val); saveToLocalStorage(); }
+    function addUser() { let val = document.getElementById('newUserName').value.trim(); if(!val) return alert('이름을 입력하세요.'); if(users.includes(val)) return alert('이미 존재하는 사용자입니다.'); users.push(val); userAccountsMap[val] = ["기본계좌"]; accountStocksMap[`val_기본계좌`] = []; document.getElementById('newUserName').value=''; renderSelectOptions(); handleUserChange(val); saveToLocalStorage(); }
     function deleteUser() { let cur = document.getElementById('userSelect').value; if(!cur) return alert('삭제할 사용자가 없습니다.'); if(!confirm(`'${cur}' 사용자의 모든 계좌 및 매매 내역이 삭제됩니다. 진행하시겠습니까?`)) return; (userAccountsMap[cur]||[]).forEach(acc=>{ localStorage.removeItem(`calculator_seedMoney_${cur}_${acc}`); delete accountStocksMap[`${cur}_${acc}`]; }); delete userAccountsMap[cur]; users = users.filter(u=>u!==cur); tradeLogs = tradeLogs.filter(log=>log.user!==cur); renderSelectOptions(); saveToLocalStorage(); loadSeedMoney(); calculateAll(); }
     function addAccount() { let curU = document.getElementById('userSelect').value, val = document.getElementById('newAccountName').value.trim(); if(!curU) return alert('사용자 선택 필요.'); if(!val) return alert('계좌명 입력.'); if(userAccountsMap[curU].includes(val)) return alert('존재하는 계좌명.'); userAccountsMap[curU].push(val); accountStocksMap[`${curU}_${val}`]=[]; document.getElementById('newAccountName').value=''; renderAccountOptions(curU); handleAccountChange(val); saveToLocalStorage(); }
     function deleteAccount() { let curU = document.getElementById('userSelect').value, curA = document.getElementById('accountSelect').value; if(!curU||!curA) return alert('삭제할 계좌 없음.'); if(!confirm(`삭제 진행?`)) return; localStorage.removeItem(`calculator_seedMoney_${curU}_${curA}`); delete accountStocksMap[`${curU}_${curA}`]; userAccountsMap[curU]=userAccountsMap[curU].filter(a=>a!==curA); tradeLogs=tradeLogs.filter(log=>!(log.user===curU&&log.account===curA)); renderAccountOptions(curU); saveToLocalStorage(); loadSeedMoney(); calculateAll(); }
@@ -507,6 +510,54 @@
         openUserDashboard(currentDashboardTab, true);
     }
 
+    function togglePortfolioGroup(accId, element, accName) {
+        const rows = document.querySelectorAll('.' + accId);
+        const icon = element.querySelector('.toggle-icon');
+        if (rows.length === 0) return;
+        
+        const isCurrentlyHidden = rows[0].style.display === 'none';
+        rows.forEach(row => { row.style.display = isCurrentlyHidden ? '' : 'none'; });
+        if (icon) { icon.innerText = isCurrentlyHidden ? '▼' : '▶'; }
+        
+        if (isCurrentlyHidden) {
+            if (!expandedPortfolioAccounts.includes(accName)) expandedPortfolioAccounts.push(accName);
+        } else {
+            expandedPortfolioAccounts = expandedPortfolioAccounts.filter(name => name !== accName);
+        }
+    }
+
+    // 그룹 헤더 rowspan 동적 변경 기능이 포함된 새로운 아코디언 토글 로직
+    function toggleGroupWithRowspan(grpId, element, grpName, stateArray) {
+        const rows = document.querySelectorAll('.' + grpId);
+        const icon = element.querySelector('.toggle-icon');
+        const tdMonth = element.querySelector('.month-cell');
+        
+        if (rows.length === 0) return;
+        
+        const isCurrentlyHidden = rows[0].style.display === 'none';
+        rows.forEach(row => { row.style.display = isCurrentlyHidden ? '' : 'none'; });
+        if (icon) { icon.innerText = isCurrentlyHidden ? '▼' : '▶'; }
+        
+        if (tdMonth) {
+            tdMonth.rowSpan = isCurrentlyHidden ? (rows.length + 1) : 1;
+        }
+        
+        if (isCurrentlyHidden) {
+            if (!stateArray.includes(grpName)) stateArray.push(grpName);
+        } else {
+            const index = stateArray.indexOf(grpName);
+            if (index > -1) stateArray.splice(index, 1);
+        }
+    }
+
+    function toggleProfitGroup(grpId, element, grpName) {
+        toggleGroupWithRowspan(grpId, element, grpName, expandedProfitMonths);
+    }
+
+    function toggleDividendGroup(grpId, element, grpName) {
+        toggleGroupWithRowspan(grpId, element, grpName, expandedDividendMonths);
+    }
+
     function openUserDashboard(targetTab = 'portfolio', isReRender = false, filterAccount = null) {
         currentDashboardTab = targetTab;
         const currentUser = document.getElementById('userSelect').value;
@@ -515,6 +566,9 @@
         if(!isReRender) {
             dashboardSort = { field: null, order: 'desc' }; 
             currentDashboardFilter = '전체';
+            expandedPortfolioAccounts = []; 
+            expandedProfitMonths = [];   // 실현손익 펼침 상태 초기화
+            expandedDividendMonths = []; // 배당금 펼침 상태 초기화
         }
         if (filterAccount !== null) {
             currentDashboardFilter = filterAccount;
@@ -623,7 +677,13 @@
         });
 
         let hasPortfolioData = false;
+        let accGrpIdx = 0;
+
         Object.keys(accountsData).sort().forEach(acc => {
+            accGrpIdx++;
+            let accId = 'portfolio_grp_' + accGrpIdx;
+            let isExpanded = expandedPortfolioAccounts.includes(acc);
+
             const stocksInAcc = Object.keys(accountsData[acc]).filter(stockName => accountsData[acc][stockName].currentQty > 0);
             if (stocksInAcc.length === 0) return;
 
@@ -663,7 +723,9 @@
 
             const trHeader = document.createElement('tr');
             trHeader.innerHTML = `
-                <td colspan="4" style="background-color: #edf2f7; font-weight: bold; color: #333; text-align: left; padding: 8px 10px; border-top: 2px solid #cbd5e0; vertical-align: middle;">📁 계좌: ${acc}</td>
+                <td colspan="4" style="background-color: #edf2f7; font-weight: bold; color: #333; text-align: left; padding: 8px 10px; border-top: 2px solid #cbd5e0; vertical-align: middle; cursor: pointer;" onclick="togglePortfolioGroup('${accId}', this, '${acc}')">
+                    <span class="toggle-icon" style="color:#2b6cb0; margin-right:5px; font-size:12px; display:inline-block; width:15px;">${isExpanded ? '▼' : '▶'}</span>📁 계좌: ${acc}
+                </td>
                 <td style="background-color: #edf2f7; font-weight: bold; color: #333; text-align: left; padding: 8px 4px; border-top: 2px solid #cbd5e0; vertical-align: middle;">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <div>
@@ -714,6 +776,8 @@
                 let evalProfitSign = evalProfit > 0 ? "+" : "";
 
                 const tr = document.createElement('tr');
+                tr.className = accId;
+                tr.style.display = isExpanded ? '' : 'none';
                 tr.innerHTML = `<td class="text-left" style="padding-left: 15px;">${stockName}${codeDisplay}</td>
                     <td class="text-center" style="font-weight:bold;">${data.currentQty.toLocaleString()} 주</td>
                     <td class="text-right" style="padding-right: 8px;">${data.currentAvgPrice.toLocaleString()} 원</td>
@@ -756,17 +820,33 @@
             if(monthData.profit !== 0 || monthData.profitDetails.length > 0) {
                 hasProfit = true; let profitClass = monthData.profit > 0 ? "plus" : (monthData.profit < 0 ? "minus" : ""), profitSign = monthData.profit > 0 ? "+" : "";
                 let mRate = monthData.buyCost > 0 ? (monthData.profit / monthData.buyCost * 100).toFixed(2) : "0.00";
+                
+                let grpId = 'profit_grp_' + month;
+                let isExpanded = expandedProfitMonths.includes(month);
+                let displayStyle = isExpanded ? '' : 'none';
+                let currentSpan = isExpanded ? (monthData.profitDetails.length + 1) : 1;
+
                 const trMonthSumP = document.createElement('tr');
+                trMonthSumP.style.cursor = 'pointer';
+                trMonthSumP.onclick = function() { toggleProfitGroup(grpId, this, month); };
                 trMonthSumP.innerHTML = `
-                    <td rowspan="${monthData.profitDetails.length + 1}" style="text-align: center; font-weight: bold; font-size: 14px; color: #2d3748; vertical-align: middle; background-color: #fff; border-bottom: 2px solid #e2e8f0;">${month}</td>
-                    <td colspan="3" style="text-align: center; font-weight: bold; font-size: 14px; color: #2d3748; background-color: #f7fafc; padding: 10px;">월 합계</td>
-                    <td class="${profitClass}" style="text-align: right; font-weight: bold; font-size: 14px; background-color: #f7fafc; padding: 10px 15px 10px 10px;">${profitSign}${monthData.profit.toLocaleString()} 원 <span style="font-size:14px; font-weight:bold;">(${profitSign}${mRate}%)</span></td>`;
+                    <td class="month-cell" rowspan="${currentSpan}" style="text-align: center; font-weight: bold; font-size: 14px; color: #2d3748; vertical-align: middle; background-color: #fff; border-bottom: 2px solid #e2e8f0;">
+                        ${month}
+                    </td>
+                    <td colspan="3" style="text-align: center; font-weight: bold; font-size: 14px; color: #2d3748; background-color: #f7fafc; padding: 10px;">
+                        <span class="toggle-icon" style="color:#2b6cb0; margin-right:5px; font-size:12px; display:inline-block; width:15px;">${isExpanded ? '▼' : '▶'}</span>월 합계
+                    </td>
+                    <td class="${profitClass}" style="text-align: right; font-weight: bold; font-size: 14px; background-color: #f7fafc; padding: 10px 15px 10px 10px;">
+                        ${profitSign}${monthData.profit.toLocaleString()} 원 <span style="font-size:14px; font-weight:bold;">(${profitSign}${mRate}%)</span>
+                    </td>`;
                 tbodyProfit.appendChild(trMonthSumP);
 
                 monthData.profitDetails.forEach((p, idx) => {
                     const borderStyle = idx === monthData.profitDetails.length - 1 ? "border-bottom: 2px solid #e2e8f0;" : "border-bottom: 1px solid #edf2f7;";
                     let pClass = p.amt > 0 ? "plus" : (p.amt < 0 ? "minus" : ""), pSign = p.amt > 0 ? "+" : "";
                     const trDetailP = document.createElement('tr');
+                    trDetailP.className = grpId;
+                    trDetailP.style.display = displayStyle;
                     trDetailP.innerHTML = `
                         <td style="text-align: center; font-size: 14px; font-weight: bold; color: #2d3748; padding: 10px 5px; ${borderStyle}">${p.date}</td>
                         <td style="text-align: left; font-size: 14px; font-weight: bold; color: #2d3748; padding: 10px 5px; ${borderStyle}">📁 ${p.acc}</td>
@@ -780,23 +860,38 @@
 
             if(monthData.dividend !== 0) {
                 hasDividend = true;
+                
+                let grpId = 'div_grp_' + month;
+                let isExpanded = expandedDividendMonths.includes(month);
+                let displayStyle = isExpanded ? '' : 'none';
+                let currentSpan = isExpanded ? (monthData.divDetails.length + 1) : 1;
+
                 const trMonthSumD = document.createElement('tr');
+                trMonthSumD.style.cursor = 'pointer';
+                trMonthSumD.onclick = function() { toggleDividendGroup(grpId, this, month); };
                 trMonthSumD.innerHTML = `
-                    <td rowspan="${monthData.divDetails.length + 1}" style="text-align: center; font-weight: bold; font-size: 14px; color: #2d3748; vertical-align: middle; background-color: #fff; border-bottom: 2px solid #e2e8f0;">${month}</td>
-                    <td colspan="5" style="text-align: center; font-weight: bold; font-size: 13px; color: #2f855a; background-color: #f0fff4; padding: 10px;">월 합계</td>
+                    <td class="month-cell" rowspan="${currentSpan}" style="text-align: center; font-weight: bold; font-size: 14px; color: #2d3748; vertical-align: middle; background-color: #fff; border-bottom: 2px solid #e2e8f0;">
+                        ${month}
+                    </td>
+                    <td colspan="5" style="text-align: center; font-weight: bold; font-size: 14px; color: #2f855a; background-color: #f0fff4; padding: 10px;">
+                        <span class="toggle-icon" style="color:#38a169; margin-right:5px; font-size:12px; display:inline-block; width:15px;">${isExpanded ? '▼' : '▶'}</span>월 합계
+                    </td>
                     <td style="text-align: right; font-weight: bold; font-size: 14px; color: #2f855a; background-color: #f0fff4; padding: 10px 15px 10px 10px;">+${monthData.dividend.toLocaleString()} 원</td>`;
                 tbodyDividend.appendChild(trMonthSumD);
 
                 monthData.divDetails.forEach((d, idx) => {
                     const borderStyle = idx === monthData.divDetails.length - 1 ? "border-bottom: 2px solid #e2e8f0;" : "border-bottom: 1px solid #edf2f7;";
                     const trDetailD = document.createElement('tr');
+                    trDetailD.className = grpId;
+                    trDetailD.style.display = displayStyle;
+                    // 배당금 폰트 크기 및 스타일을 월별 실현손익과 동일하게 (14px, #2d3748, bold) 맞춤 적용
                     trDetailD.innerHTML = `
-                        <td style="text-align: left; font-size: 13px; font-weight: bold; color: #4a5568; padding: 10px 10px 10px 15px; ${borderStyle}">📁 ${d.acc}</td>
-                        <td style="text-align: left; font-size: 13px; color: #333; padding: 10px 5px; line-height: 1.3; ${borderStyle}">${d.stock}</td>
-                        <td style="text-align: center; font-size: 12px; color: #718096; padding: 10px 5px; ${borderStyle}">${d.date}</td>
-                        <td style="text-align: right; font-size: 13px; font-weight: bold; color: #4a5568; padding: 10px 5px; ${borderStyle}">${d.qty.toLocaleString()} 주</td>
-                        <td style="text-align: right; font-size: 13px; color: #718096; padding: 10px 5px; ${borderStyle}">${d.price.toLocaleString()} 원</td>
-                        <td class="plus" style="text-align: right; font-size: 13px; font-weight: bold; padding: 10px 15px 10px 5px; ${borderStyle}">+${d.amt.toLocaleString()} 원</td>`;
+                        <td style="text-align: left; font-size: 14px; font-weight: bold; color: #2d3748; padding: 10px 10px 10px 15px; ${borderStyle}">📁 ${d.acc}</td>
+                        <td style="text-align: left; font-size: 14px; font-weight: bold; color: #2d3748; padding: 10px 5px; line-height: 1.3; ${borderStyle}">${d.stock}</td>
+                        <td style="text-align: center; font-size: 14px; font-weight: bold; color: #2d3748; padding: 10px 5px; ${borderStyle}">${d.date}</td>
+                        <td style="text-align: right; font-size: 14px; font-weight: bold; color: #2d3748; padding: 10px 5px; ${borderStyle}">${d.qty.toLocaleString()} 주</td>
+                        <td style="text-align: right; font-size: 14px; font-weight: bold; color: #2d3748; padding: 10px 5px; ${borderStyle}">${d.price.toLocaleString()} 원</td>
+                        <td class="plus" style="text-align: right; font-size: 14px; font-weight: bold; padding: 10px 15px 10px 5px; ${borderStyle}">+${d.amt.toLocaleString()} 원</td>`;
                     tbodyDividend.appendChild(trDetailD);
                 });
             }
