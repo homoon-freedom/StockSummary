@@ -666,7 +666,7 @@
                     let isFund = targetStockObj && targetStockObj.code && (targetStockObj.code === '펀드' || targetStockObj.code.includes('펀드'));
                     
                     if (isFund) {
-                        currentPrice = accountSums[acc].purchase;
+                        currentPrice = st.totalPurchaseAmount;
                     }
 
                     st.currentPrice = currentPrice;
@@ -944,32 +944,6 @@
         });
         const isFund = currentStockObj && currentStockObj.code && (currentStockObj.code === '펀드' || currentStockObj.code.includes('펀드'));
 
-        let accTotalPurchasesMap = {};
-        if (isFund) {
-            let tempAccData = {};
-            tradeLogs.forEach(log => {
-                if (log.user === currentUser) {
-                    if (!tempAccData[log.account]) tempAccData[log.account] = {};
-                    if (!tempAccData[log.account][log.stock]) tempAccData[log.account][log.stock] = { qty: 0, avgPrice: 0 };
-                    let st = tempAccData[log.account][log.stock];
-                    if (log.type === '매수') {
-                        let total = (st.avgPrice * st.qty) + (log.price * log.qty);
-                        st.qty += log.qty;
-                        st.avgPrice = st.qty > 0 ? Math.round(total / st.qty) : 0;
-                    } else if (log.type === '매도') {
-                        st.qty -= log.qty;
-                    }
-                }
-            });
-            Object.keys(tempAccData).forEach(acc => {
-                let total = 0;
-                Object.keys(tempAccData[acc]).forEach(stk => {
-                    if (tempAccData[acc][stk].qty > 0) total += tempAccData[acc][stk].qty * tempAccData[acc][stk].avgPrice;
-                });
-                accTotalPurchasesMap[acc] = total;
-            });
-        }
-
         const currentPriceVal = parseFloat(document.getElementById('currentPrice').value.replace(/,/g,'')) || 0;
 
         let accountsData = {}, grandTotalPurchaseAmount = 0, grandTotalEvaluationAmount = 0, grandTotalQty = 0, grandTotalProfit = 0;
@@ -995,7 +969,7 @@
             let data = accountsData[acc]; if (data.currentQty === 0) return;
             let purchase = data.currentAvgPrice * data.currentQty;
             
-            let finalCurrentPrice = isFund ? (accTotalPurchasesMap[acc] || 0) : currentPriceVal;
+            let finalCurrentPrice = isFund ? purchase : currentPriceVal;
             let evaluation = finalCurrentPrice * data.currentQty;
             
             grandTotalPurchaseAmount += purchase;
@@ -1164,8 +1138,9 @@ function calculateAll() {
     
     let isFund = actS?.code && (actS.code === '펀드' || actS.code.includes('펀드'));
     if (isFund) {
-        document.getElementById('currentPrice').value = accTotalPurchase.toLocaleString();
-        stockPrices[s] = accTotalPurchase.toString();
+        let currentStockPurchase = cap * cq;
+        document.getElementById('currentPrice').value = currentStockPurchase.toLocaleString();
+        stockPrices[s] = currentStockPurchase.toString();
         document.getElementById('currentPrice').style.color = "#2b6cb0"; 
     } else if (actS?.code) {
         fetchCurrentPrice(actS.code);
