@@ -1043,30 +1043,44 @@ function calculateAll() {
 
 
     function openStockLoadModal() {
-        let allStocks = [];
-        let uniqueCheck = new Set();
+        let stockMap = {};
         
-        Object.values(accountStocksMap).forEach(stocks => {
+        // accountStocksMap 객체를 순회하며 종목별로 등록된 계좌 정보 수집
+        Object.entries(accountStocksMap).forEach(([userAccKey, stocks]) => {
+            let splitIdx = userAccKey.indexOf('_');
+            let userName = userAccKey.substring(0, splitIdx);
+            let accName = userAccKey.substring(splitIdx + 1);
+            
             stocks.forEach(s => {
-                let key = s.name + "_" + (s.code || "");
-                if (!uniqueCheck.has(key)) {
-                    uniqueCheck.add(key);
-                    allStocks.push(s);
+                let uniqueKey = s.name + "_" + (s.code || "");
+                if (!stockMap[uniqueKey]) {
+                    stockMap[uniqueKey] = { name: s.name, code: s.code, accounts: new Set() };
                 }
+                // 종목이 등록된 "사용자 - 계좌명"을 Set에 추가 (중복 방지)
+                stockMap[uniqueKey].accounts.add(`${userName} - ${accName}`);
             });
         });
         
         let listContainer = document.getElementById('stockLoadList');
         listContainer.innerHTML = '';
         
+        let allStocks = Object.values(stockMap);
+        
         if (allStocks.length === 0) {
             listContainer.innerHTML = '<div style="text-align:center; padding:15px; color:#718096; font-size:13px;">등록된 종목이 없습니다.</div>';
         } else {
             allStocks.sort((a, b) => a.name.localeCompare(b.name)).forEach(s => {
                 let codeText = s.code ? `(${s.code})` : '';
+                // 여러 계좌에 등록된 경우 콤마(,)로 연결
+                let accText = Array.from(s.accounts).join(', '); 
+                
                 let btn = document.createElement('button');
-                btn.style.cssText = "width:100%; text-align:left; padding:10px; background:#f7fafc; border:1px solid #e2e8f0; border-radius:4px; cursor:pointer; font-size:13px; font-weight:bold; color:#4a5568;";
-                btn.innerHTML = `➕ ${s.name} <span style="color:#718096; font-weight:normal; font-size:11px;">${codeText}</span>`;
+                // flex 속성을 부여하여 종목명은 왼쪽, 계좌명은 우측 끝으로 배치
+                btn.style.cssText = "width:100%; text-align:left; padding:10px; background:#f7fafc; border:1px solid #e2e8f0; border-radius:4px; cursor:pointer; font-size:13px; font-weight:bold; color:#4a5568; display:flex; justify-content:space-between; align-items:center;";
+                
+                btn.innerHTML = `<span>➕ ${s.name} <span style="color:#718096; font-weight:normal; font-size:11px;">${codeText}</span></span>
+                                 <span style="color:#2b6cb0; font-weight:normal; font-size:11px; text-align:right;">(${accText})</span>`;
+                                 
                 btn.onmouseover = () => btn.style.backgroundColor = '#edf2f7';
                 btn.onmouseout = () => btn.style.backgroundColor = '#f7fafc';
                 btn.onclick = () => selectStockToLoad(s.name, s.code || "");
@@ -1075,6 +1089,7 @@ function calculateAll() {
         }
         document.getElementById('stockLoadModal').style.display = 'flex';
     }
+
 
     function closeStockLoadModal(e) {
         if (!e || e.target.id === 'stockLoadModal' || e.type === 'click') {
