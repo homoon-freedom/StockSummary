@@ -1,3 +1,9 @@
+요청하신 대로 **"전체 계좌 보유 현황" 대시보드의 계좌별 헤더 부분(총 매입금액, 총 평가금액/손익)에 정렬 토글 버튼을 추가**했습니다.
+해당 버튼을 클릭하면 다음과 같이 동작합니다.
+ 1. **총 매입금액 옆 토글 버튼(↕️/🔽/🔼)**: 클릭 시 해당 계좌에 속한 종목들을 **매입금 최고액/최저액 순**으로 정렬합니다.
+ 2. **총 평가금액 옆 토글 버튼(↕️/🔽/🔼)**: 클릭 시 해당 계좌에 속한 종목들을 **평가손익 최고액/최저액 순**으로 정렬합니다.
+아래 전체 코드를 복사하여 기존 파일을 덮어쓰기 하시면 됩니다.
+```html
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -253,6 +259,9 @@
     let users = ["남호문", "홍길동"], userAccountsMap = {"남호문":["기본계좌", "ISA계좌"], "홍길동":["기본계좌"]}, accountStocksMap = {"남호문_기본계좌":[{name:"삼성전자 레버리지", code:"122630"}, {name:"삼성전자", code:"005930"}], "남호문_ISA계좌":[], "홍길동_기본계좌":[]};
     let tradeLogs = [], stockPrices = {}, globalCalculatedAvgPrice = 0, globalCalculatedQty = 0, editIndex = -1, selectedTargetIndex = -1;
     let isStockEditMode = false, originalStockName = "";
+    
+    // 모달 정렬 전역 상태 변수
+    let dashboardSort = { field: null, order: 'desc' };
 
     window.onload = function() { document.getElementById('tradeDate').value = new Date().toISOString().substring(0, 10); loadFromLocalStorage(); renderSelectOptions(); loadSeedMoney(); calculateAll(); };
     function saveToLocalStorage() { localStorage.setItem('calculator_users', JSON.stringify(users)); localStorage.setItem('calculator_userAccountsMap', JSON.stringify(userAccountsMap)); localStorage.setItem('calculator_accountStocksMap', JSON.stringify(accountStocksMap)); localStorage.setItem('calculator_tradeLogs', JSON.stringify(tradeLogs)); localStorage.setItem('calculator_stockPrices', JSON.stringify(stockPrices)); }
@@ -471,13 +480,27 @@
         let dSm=document.getElementById('displaySeedMoney'); if(dSm) dSm.innerText = totalSm.toLocaleString() + " 원";
     }
 
-function openUserDashboard() {
+function toggleDashboardSort(field) {
+    if(dashboardSort.field === field) {
+        dashboardSort.order = dashboardSort.order === 'desc' ? 'asc' : 'desc';
+    } else {
+        dashboardSort.field = field;
+        dashboardSort.order = 'desc';
+    }
+    openUserDashboard(true);
+}
+
+function openUserDashboard(isReRender = false) {
     const currentUser = document.getElementById('userSelect').value;
     if (!currentUser) return alert('사용자를 선택해 주세요.');
 
     document.getElementById('modalTitle').innerText = `🏦 [${currentUser}] 전체 계좌 보유 현황`;
-    const firstTabBtn = document.querySelector('.tab-container .tab-btn');
-    switchDashboardTab('portfolio', firstTabBtn);
+    
+    if(!isReRender) {
+        dashboardSort = { field: null, order: 'desc' }; // 모달을 새로 열 때는 정렬 초기화
+        const firstTabBtn = document.querySelector('.tab-container .tab-btn');
+        switchDashboardTab('portfolio', firstTabBtn);
+    }
 
     const tbodyPortfolio = document.getElementById('modalTableBody'), tbodyProfit = document.getElementById('modalProfitBody'), tbodyDividend = document.getElementById('modalDividendBody');
     tbodyPortfolio.innerHTML = ''; tbodyProfit.innerHTML = ''; tbodyDividend.innerHTML = '';
@@ -585,16 +608,30 @@ function openUserDashboard() {
         let realizedColor = accTotalRealizedProfit > 0 ? "#e53e3e" : (accTotalRealizedProfit < 0 ? "#3182ce" : "#333");
         let realizedSign = accTotalRealizedProfit > 0 ? "+" : "";
 
+        // 정렬 토글 아이콘 설정
+        let purchaseSortIcon = dashboardSort.field === 'purchase' ? (dashboardSort.order === 'desc' ? '🔽' : '🔼') : '↕️';
+        let profitSortIcon = dashboardSort.field === 'profit' ? (dashboardSort.order === 'desc' ? '🔽' : '🔼') : '↕️';
+
         const trHeader = document.createElement('tr');
         trHeader.innerHTML = `
             <td colspan="4" style="background-color: #edf2f7; font-weight: bold; color: #333; text-align: left; padding: 8px 10px; border-top: 2px solid #cbd5e0; vertical-align: middle;">📁 계좌: ${acc}</td>
             <td style="background-color: #edf2f7; font-weight: bold; color: #333; text-align: left; padding: 8px 4px; border-top: 2px solid #cbd5e0; vertical-align: middle;">
-                <div style="color: #2b6cb0;">${accTotalPurchase.toLocaleString()} 원</div>
-                <div style="font-size: 11px; margin-top: 4px; color: #718096; font-weight: normal;">+예수금: ${cb.toLocaleString()} 원</div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div style="color: #2b6cb0;">${accTotalPurchase.toLocaleString()} 원</div>
+                        <div style="font-size: 11px; margin-top: 4px; color: #718096; font-weight: normal;">+예수금: ${cb.toLocaleString()} 원</div>
+                    </div>
+                    <button onclick="toggleDashboardSort('purchase')" style="background:none; border:none; cursor:pointer; font-size:14px; padding:0 5px;" title="매입금액 기준 정렬">${purchaseSortIcon}</button>
+                </div>
             </td>
             <td style="background-color: #edf2f7; font-weight: bold; color: ${headerEvalColor}; text-align: left; padding: 8px 4px; border-top: 2px solid #cbd5e0; vertical-align: middle;">
-                ${accTotalEval.toLocaleString()} 원
-                <div style="font-size: 11px; margin-top: 2px;">(${profitSign}${accProfit.toLocaleString()} 원 / ${profitSign}${accProfitRate}%)</div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        ${accTotalEval.toLocaleString()} 원
+                        <div style="font-size: 11px; margin-top: 2px;">(${profitSign}${accProfit.toLocaleString()} 원 / ${profitSign}${accProfitRate}%)</div>
+                    </div>
+                    <button onclick="toggleDashboardSort('profit')" style="background:none; border:none; cursor:pointer; font-size:14px; padding:0 5px;" title="평가손익 기준 정렬">${profitSortIcon}</button>
+                </div>
             </td>
             <td class="text-right" style="background-color: #edf2f7; font-weight: bold; color: ${realizedColor}; padding: 8px 8px 8px 4px; border-top: 2px solid #cbd5e0; vertical-align: middle;">
                 ${realizedSign}${accTotalRealizedProfit.toLocaleString()} 원
@@ -602,8 +639,23 @@ function openUserDashboard() {
         `;
         tbodyPortfolio.appendChild(trHeader);
 
-        stocksInAcc.forEach(stockName => {
-            let data = accountsData[acc][stockName]; hasPortfolioData = true;
+        // 종목들을 배열로 매핑 후 정렬 조건에 따라 정렬 처리
+        let stockItems = stocksInAcc.map(stockName => {
+            let data = accountsData[acc][stockName];
+            let evalProfit = data.totalEvalAmount - data.totalPurchaseAmount;
+            return { name: stockName, data: data, evalProfit: evalProfit };
+        });
+
+        if (dashboardSort.field === 'purchase') {
+            stockItems.sort((a, b) => dashboardSort.order === 'desc' ? b.data.totalPurchaseAmount - a.data.totalPurchaseAmount : a.data.totalPurchaseAmount - b.data.totalPurchaseAmount);
+        } else if (dashboardSort.field === 'profit') {
+            stockItems.sort((a, b) => dashboardSort.order === 'desc' ? b.evalProfit - a.evalProfit : a.evalProfit - b.evalProfit);
+        }
+
+        stockItems.forEach(item => {
+            let stockName = item.name;
+            let data = item.data;
+            hasPortfolioData = true;
             let profitClass = data.totalProfit > 0 ? "plus" : (data.totalProfit < 0 ? "minus" : ""), profitSign = data.totalProfit > 0 ? "+" : "";
             const targetStockObj = (accountStocksMap[`${currentUser}_${acc}`] || []).find(s => s.name === stockName);
             const codeDisplay = (targetStockObj && targetStockObj.code) ? `(${targetStockObj.code})` : '';
@@ -1010,3 +1062,5 @@ function calculateAll() {
 </script>
 </body>
 </html>
+
+```
