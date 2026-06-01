@@ -49,7 +49,7 @@
         .modal-overlay {display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;justify-content:center;align-items:center;padding:10px;box-sizing:border-box;}
         .modal-content {background:white;width:100%;max-width:850px;border-radius:8px;padding:15px;box-shadow:0 4px 15px rgba(0,0,0,0.2);box-sizing:border-box;max-height:90vh;overflow-y:auto;display:flex;flex-direction:column;}
         .modal-header {display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #cbd5e0;padding-bottom:8px;margin-bottom:12px;}
-        .modal-title {font-size:14px;font-weight:bold;color:#2b6cb0;} .modal-close {background:none;border:none;font-size:20px;font-weight:bold;color:#a0aec0;cursor:pointer;}
+        .modal-title {font-size:14px;font-weight:bold;color:#2b6cb0;display:flex;align-items:center;} .modal-close {background:none;border:none;font-size:20px;font-weight:bold;color:#a0aec0;cursor:pointer;}
         .tab-container {display:flex;gap:10px;margin-bottom:15px;border-bottom:2px solid #e2e8f0;}
         .tab-btn {background:none;border:none;padding:10px 15px;font-size:13px;font-weight:bold;color:#718096;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;}
         .tab-btn:hover {color:#2b6cb0;} .tab-btn.active {color:#2b6cb0;border-bottom:3px solid #2b6cb0;}
@@ -279,6 +279,7 @@
     
     let dashboardSort = { field: null, order: 'desc' };
     let currentDashboardTab = 'portfolio';
+    let currentDashboardFilter = '전체'; 
 
     window.onload = function() { document.getElementById('tradeDate').value = new Date().toISOString().substring(0, 10); loadFromLocalStorage(); renderSelectOptions(); loadSeedMoney(); calculateAll(); };
     function saveToLocalStorage() { localStorage.setItem('calculator_users', JSON.stringify(users)); localStorage.setItem('calculator_userAccountsMap', JSON.stringify(userAccountsMap)); localStorage.setItem('calculator_accountStocksMap', JSON.stringify(accountStocksMap)); localStorage.setItem('calculator_tradeLogs', JSON.stringify(tradeLogs)); localStorage.setItem('calculator_stockPrices', JSON.stringify(stockPrices)); }
@@ -506,19 +507,39 @@
         openUserDashboard(currentDashboardTab, true);
     }
 
-    function openUserDashboard(targetTab = 'portfolio', isReRender = false) {
+    function openUserDashboard(targetTab = 'portfolio', isReRender = false, filterAccount = null) {
         currentDashboardTab = targetTab;
         const currentUser = document.getElementById('userSelect').value;
         if (!currentUser) return alert('사용자를 선택해 주세요.');
+
+        if(!isReRender) {
+            dashboardSort = { field: null, order: 'desc' }; 
+            currentDashboardFilter = '전체';
+        }
+        if (filterAccount !== null) {
+            currentDashboardFilter = filterAccount;
+        }
 
         let titleText = "🏦 전체 계좌 보유 현황";
         if (targetTab === 'profit') titleText = "📈 월별 실현손익";
         else if (targetTab === 'dividend') titleText = "💰 월별 배당금";
 
-        document.getElementById('modalTitle').innerText = `[${currentUser}] ${titleText}`;
-        
-        if(!isReRender) {
-            dashboardSort = { field: null, order: 'desc' }; 
+        const modalTitleDiv = document.getElementById('modalTitle');
+        modalTitleDiv.innerHTML = `[${currentUser}] ${titleText}`;
+
+        if (targetTab === 'profit' || targetTab === 'dividend') {
+            const select = document.createElement('select'); 
+            select.style.marginLeft = "10px"; 
+            select.style.padding = "4px 8px"; 
+            select.style.borderRadius = "4px"; 
+            select.style.fontWeight = "bold";
+            select.style.fontSize = "13px";
+            
+            let accs = userAccountsMap[currentUser] || [];
+            select.innerHTML = `<option value="전체">전체 계좌</option>` + accs.map(a => `<option value="${a}">${a}</option>`).join('');
+            select.value = currentDashboardFilter;
+            select.onchange = function() { openUserDashboard(targetTab, true, this.value); };
+            modalTitleDiv.appendChild(select);
         }
 
         switchDashboardTab(targetTab, null);
@@ -551,17 +572,22 @@
                     let buyCost = st.currentAvgPrice * log.qty;
                     let profit = (log.price - st.currentAvgPrice) * log.qty;
                     st.totalProfit += profit; 
-                    monthlyData[monthKey].profit += profit; 
-                    monthlyData[monthKey].buyCost += buyCost;
                     
-                    let rate = buyCost > 0 ? (profit / buyCost * 100).toFixed(2) : "0.00";
-                    monthlyData[monthKey].profitDetails.push({ date: log.date, acc: log.account, stock: log.stock, amt: profit, rate: rate }); 
+                    if (targetTab !== 'profit' || currentDashboardFilter === '전체' || log.account === currentDashboardFilter) {
+                        monthlyData[monthKey].profit += profit; 
+                        monthlyData[monthKey].buyCost += buyCost;
+                        
+                        let rate = buyCost > 0 ? (profit / buyCost * 100).toFixed(2) : "0.00";
+                        monthlyData[monthKey].profitDetails.push({ date: log.date, acc: log.account, stock: log.stock, amt: profit, rate: rate }); 
+                    }
                     
                     st.currentQty -= log.qty; if (st.currentQty === 0) st.currentAvgPrice = 0;
                 }
             } else if (log.type === '분배금') {
-                monthlyData[monthKey].dividend += tradeAmount;
-                monthlyData[monthKey].divDetails.push({ acc: log.account, stock: log.stock, amt: tradeAmount, date: log.date, qty: log.qty, price: log.price });
+                if (targetTab !== 'dividend' || currentDashboardFilter === '전체' || log.account === currentDashboardFilter) {
+                    monthlyData[monthKey].dividend += tradeAmount;
+                    monthlyData[monthKey].divDetails.push({ acc: log.account, stock: log.stock, amt: tradeAmount, date: log.date, qty: log.qty, price: log.price });
+                }
             }
         });
 
@@ -1102,7 +1128,6 @@ function calculateAll() {
         closeStockLoadModal();
     }
 
-    // ▼▼▼ 데이터 내보내기 및 불러오기 신규 추가 로직 ▼▼▼
     function exportData() {
         let exportObj = {};
         for (let i = 0; i < localStorage.length; i++) {
