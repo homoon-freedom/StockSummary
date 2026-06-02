@@ -184,58 +184,9 @@ function triggerEditFromModal(){closeActionModal();let log=tradeLogs[selectedTar
 function triggerDeleteFromModal(){closeActionModal();if(editIndex===selectedTargetIndex)return alert('수정 중 삭제 불가.');if(!confirm("삭제 진행?"))return;tradeLogs.splice(selectedTargetIndex,1);if(editIndex>selectedTargetIndex)editIndex--;saveToLocalStorage();calculateAll();}
 function resetForm(){editIndex=-1;document.getElementById('tradeDate').value=new Date().toISOString().substring(0,10);document.getElementById('tradeType').value='매수';document.getElementById('tradePrice').value='';document.getElementById('tradeQty').value='';document.getElementById('tradeQty').readOnly=false;document.getElementById('tradeQty').style.backgroundColor='#fff';toggleInputFields();document.getElementById('submitBtn').innerText="내역 추가";}
 function updateStockPriceMap(){let s=document.getElementById('stockSelect').value;if(s)stockPrices[s]=document.getElementById('currentPrice').value;saveToLocalStorage();calculateRealtimeMetrics();}
-function calculateRealtimeMetrics(){
-    let cp=parseFloat(document.getElementById('currentPrice').value.replace(/,/g,''))||0,
-        cb=parseFloat(document.getElementById('currentBalance').innerText.split('원')[0].replace(/[^0-9-]/g,''))||0,
-        u=document.getElementById('userSelect').value,
-        a=document.getElementById('accountSelect').value,
-        curS=document.getElementById('stockSelect').value,
-        accTempData={},
-        totalAccEvalStocks=0,
-        totalAccPurchaseStocks=0;
-
-    // 계좌 내 모든 종목들의 평가금액 및 매입금액 계산
-    tradeLogs.forEach(l=>{
-        if(l.user===u&&l.account===a){
-            if(!accTempData[l.stock]) accTempData[l.stock]={qty:0,avgPrice:0};
-            let st=accTempData[l.stock];
-            if(l.type==='매수'){
-                let total=(st.avgPrice*st.qty)+(l.price*l.qty);
-                st.qty+=l.qty;
-                st.avgPrice=st.qty>0?Math.round(total/st.qty):0;
-            } else if(l.type==='매도'){
-                st.qty-=l.qty;
-            }
-        }
-    });
-
-    for(let stk in accTempData){
-        let st=accTempData[stk];
-        if(st.qty>0){
-            totalAccPurchaseStocks += st.qty * st.avgPrice;
-            let stkCp = (stk === curS) ? cp : (parseFloat(String(stockPrices[stk]||0).replace(/,/g,'')) || st.avgPrice);
-            totalAccEvalStocks += st.qty * stkCp;
-        }
-    }
-
-    // 해당 종목 전용 계산
-    let tp = globalCalculatedAvgPrice * globalCalculatedQty;
-    let te = cp * globalCalculatedQty;
-    let ep = te - tp;
-    let epr = tp > 0 ? (ep / tp) * 100 : 0;
-
-    // 화면 업데이트
-    document.getElementById('totalPurchaseAmount').innerText = tp.toLocaleString() + " 원";
-    document.getElementById('totalEvaluationAmount').innerText = te.toLocaleString() + " 원";
-    
-    let eps=document.getElementById('evaluationProfit');
-    eps.innerText = (ep>=0?"+":"") + ep.toLocaleString() + " 원 (" + (epr.toFixed(2)) + "%)";
-    eps.className = ep>0?"plus":(ep<0?"minus":"");
-
-    // 계좌 전체 정보 업데이트
-    document.getElementById('accountTotalPurchaseAmount').innerText = totalAccPurchaseStocks.toLocaleString() + " 원";
-    document.getElementById('accountTotalEvaluationAmount').innerText = totalAccEvalStocks.toLocaleString() + " 원";
-}
+function calculateRealtimeMetrics(){let cp=parseFloat(document.getElementById('currentPrice').value.replace(/,/g,''))||0,cb=parseFloat(document.getElementById('currentBalance').innerText.split('원')[0].replace(/[^0-9-]/g,''))||0,tp=globalCalculatedAvgPrice*globalCalculatedQty,te=cp*globalCalculatedQty,ep=te-tp,epr=tp>0?(ep/tp)*100:0,u=document.getElementById('userSelect').value,a=document.getElementById('accountSelect').value,accTempData={},totalAccEvalStocks=0,totalAccPurchaseStocks=0;tradeLogs.forEach(l=>{if(l.user===u&&l.account===a){if(!accTempData[l.stock])accTempData[l.stock]={qty:0,avgPrice:0};let st=accTempData[l.stock];if(l.type==='매수'){let total=(st.avgPrice*st.qty)+(l.price*l.qty);st.qty+=l.qty;st.avgPrice=st.qty>0?Math.round(total/st.qty):0;}else if(l.type==='매도'){st.qty-=l.qty;if(st.qty<=0){st.qty=0;st.avgPrice=0;}}}});let curS=document.getElementById('stockSelect').value;for(let stk in accTempData){let st=accTempData[stk];if(st.qty>0){totalAccPurchaseStocks+=st.qty*st.avgPrice;let stkCp=0;if(stk===curS)stkCp=cp;else stkCp=stockPrices[stk]?parseFloat(String(stockPrices[stk]).replace(/,/g,'')):0;if(stkCp===0)stkCp=st.avgPrice;totalAccEvalStocks+=st.qty*stkCp;}}
+let sm=parseFloat(document.getElementById('seedMoney').value.replace(/,/g,''))||0,accEvalProfit=totalAccEvalStocks-totalAccPurchaseStocks,accEvalProfitRate=totalAccPurchaseStocks>0?(accEvalProfit/totalAccPurchaseStocks)*100:0,cashRatio=sm>0?((cb/sm)*100).toFixed(1):"0.0",purchaseRatio=sm>0?((totalAccPurchaseStocks/sm)*100).toFixed(1):"0.0";document.getElementById('currentBalance').innerHTML=`${cb.toLocaleString()} 원 <span style="font-size:13px;color:#718096;font-weight:bold;">(${cashRatio}%)</span>`;document.getElementById('accountTotalPurchaseAmount').innerHTML=`${totalAccPurchaseStocks.toLocaleString()} 원 <span style="font-size:13px;color:#2b6cb0;font-weight:bold;">(${purchaseRatio}%)</span>`;let accEvalColor=totalAccEvalStocks>totalAccPurchaseStocks?"#e53e3e":(totalAccEvalStocks<totalAccPurchaseStocks?"#3182ce":"#333"),accEvalEl=document.getElementById('accountTotalEvaluationAmount');accEvalEl.innerText=totalAccEvalStocks.toLocaleString()+" 원";accEvalEl.style.color=accEvalColor;let accProfitEl=document.getElementById('accountTotalEvaluationProfit'),accSign=accEvalProfit>0?"+":"";if(totalAccPurchaseStocks===0){accProfitEl.innerText="0 원 (0.00%)";accProfitEl.className="";}else{accProfitEl.innerText=`${accSign}${accEvalProfit.toLocaleString()} 원 (${accSign}${accEvalProfitRate.toFixed(2)}%)`;accProfitEl.className=accEvalProfit>0?"plus":(accEvalProfit<0?"minus":"");}
+let stockEvalColor=te>tp?"#e53e3e":(te<tp?"#3182ce":"#333");document.getElementById('totalPurchaseAmount').innerText=`${tp.toLocaleString()} 원`;document.getElementById('totalEvaluationAmount').innerHTML=`<span style="color:${stockEvalColor};">${te.toLocaleString()} 원</span>`;let cpi=document.getElementById('currentPrice');cpi.style.color=cp===0||globalCalculatedQty===0?"#333":(cp>globalCalculatedAvgPrice?"#e53e3e":(cp<globalCalculatedAvgPrice?"#3182ce":"#333"));let eps=document.getElementById('evaluationProfit');if(cp===0||globalCalculatedQty===0){eps.innerText="0 원 (0.00%)";eps.className="";}else{let s=ep>0?"+":"";eps.innerText=`${s}${ep.toLocaleString()} 원 (${s}${epr.toFixed(2)}%)`;eps.className=ep>0?"plus":(ep<0?"minus":"");}}
 function fetchCurrentPrice(c){if(!c)return;let cpi=document.getElementById('currentPrice'),s=document.getElementById('stockSelect').value;cpi.value="조회 중...";cpi.style.color="#000000";fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${c.endsWith('.KS')||c.endsWith('.KQ')?c:c+'.KS'}?interval=1m&range=1d`)}`).then(r=>r.ok?r.json():Promise.reject()).then(d=>{let j=JSON.parse(d.contents);let p=j?.chart?.result?.[0]?.meta?.regularMarketPrice||j?.chart?.result?.[0]?.meta?.previousClose;if(p){cpi.value=Number(p).toLocaleString();stockPrices[s]=cpi.value;saveToLocalStorage();calculateRealtimeMetrics();}else throw new Error("No price data");}).catch(()=>{const savedPrice=stockPrices[s];if(savedPrice){cpi.value=savedPrice;cpi.style.color="#718096";calculateRealtimeMetrics();}else{cpi.value="";cpi.placeholder="조회 실패 (수동 입력)";}});}
 function calculateCurrentBalance(u,a,sm){let cb=sm,totalSm=sm;tradeLogs.forEach(l=>{if(l.user===u&&l.account===a){if(l.type==='매수')cb-=l.price*l.qty;if(['매도','분배금'].includes(l.type))cb+=l.price*l.qty;if(l.type==='입금'){cb+=l.price*l.qty;totalSm+=l.price*l.qty;}if(l.type==='출금'){cb-=l.price*l.qty;totalSm-=l.price*l.qty;}}});document.getElementById('currentBalance').innerText=cb.toLocaleString()+" 원";let dSm=document.getElementById('displaySeedMoney');if(dSm)dSm.innerText=totalSm.toLocaleString()+" 원";}
 function toggleDashboardSort(field){if(dashboardSort.field===field)dashboardSort.order=dashboardSort.order==='desc'?'asc':'desc';else{dashboardSort.field=field;dashboardSort.order='desc';}openUserDashboard(currentDashboardTab,true,currentDashboardFilter,currentDashboardStockFilter);}
