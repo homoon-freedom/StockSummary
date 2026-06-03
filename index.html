@@ -170,6 +170,12 @@ body{font-family:'Malgun Gothic',sans-serif;margin:10px;background-color:#f5f6f9
     <div class="summary-item"><label>계좌 총 평가금액(예수금포함)</label><span id="accountTotalAsset" style="font-weight:bold; color:#2b6cb0;">0 원</span></div>
     <div class="summary-item"><label>씨드머니 대비 손익금(수익율)</label><span id="accountSeedProfit">0 원 (0.00%)</span></div>
     <div class="summary-item"><label>계좌 총 배당금</label><span id="accountTotalDividend" style="color:#38a169; font-weight:bold;">0 원</span></div>
+    
+    <div class="summary-item" style="grid-column: span 2;">
+        <label>📊 계좌 자산 비중</label>
+        <div id="assetAllocationBar" style="display:flex; width:100%; height:20px; border-radius:6px; overflow:hidden; background:#edf2f7; margin-top:5px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);"></div>
+        <div id="assetAllocationLegend" style="display:flex; gap:10px; font-size:11px; color:#4a5568; margin-top:5px; flex-wrap:wrap;"></div>
+    </div>
 </div>
 
 <div id="stockSummaryTitle" style="font-size:14px; font-weight:bold; color:#2b6cb0; margin-bottom: 8px;">📈 선택 종목 요약 정보</div>
@@ -316,13 +322,59 @@ function triggerEditFromModal(){closeActionModal();let log=tradeLogs[selectedTar
 function triggerDeleteFromModal(){closeActionModal();if(editIndex===selectedTargetIndex)return alert('수정 중 삭제 불가.');if(!confirm("삭제 진행?"))return;tradeLogs.splice(selectedTargetIndex,1);if(editIndex>selectedTargetIndex)editIndex--;saveToLocalStorage();calculateAll();}
 function resetForm(){editIndex=-1;document.getElementById('tradeDate').value=new Date().toISOString().substring(0,10);document.getElementById('tradeType').value='매수';document.getElementById('tradePrice').value='';document.getElementById('tradeQty').value='';document.getElementById('tradeQty').readOnly=false;document.getElementById('tradeQty').style.backgroundColor='#fff';toggleInputFields();document.getElementById('submitBtn').innerText="내역 추가";}
 function updateStockPriceMap(){let s=document.getElementById('stockSelect').value;if(s)stockPrices[s]=document.getElementById('currentPrice').value;saveToLocalStorage();calculateRealtimeMetrics();}
-function calculateRealtimeMetrics(){let cp=parseFloat(document.getElementById('currentPrice').value.replace(/,/g,''))||0,cb=parseFloat(document.getElementById('currentBalance').innerText.split('원')[0].replace(/[^0-9-]/g,''))||0,tp=globalCalculatedAvgPrice*globalCalculatedQty,te=cp*globalCalculatedQty,ep=te-tp,epr=tp>0?(ep/tp)*100:0,u=document.getElementById('userSelect').value,a=document.getElementById('accountSelect').value,accTempData={},totalAccEvalStocks=0,totalAccPurchaseStocks=0;tradeLogs.forEach(l=>{if(l.user===u&&l.account===a){if(!accTempData[l.stock])accTempData[l.stock]={qty:0,avgPrice:0};let st=accTempData[l.stock];if(l.type==='매수'){let total=(st.avgPrice*st.qty)+(l.price*l.qty);st.qty+=l.qty;st.avgPrice=st.qty>0?Math.round(total/st.qty):0;}else if(l.type==='매도'){st.qty-=l.qty;if(st.qty<=0){st.qty=0;st.avgPrice=0;}}}});let curS=document.getElementById('stockSelect').value;for(let stk in accTempData){let st=accTempData[stk];if(st.qty>0){totalAccPurchaseStocks+=st.qty*st.avgPrice;let stkCp=0;if(stk===curS)stkCp=cp;else stkCp=stockPrices[stk]?parseFloat(String(stockPrices[stk]).replace(/,/g,'')):0;if(stkCp===0)stkCp=st.avgPrice;totalAccEvalStocks+=st.qty*stkCp;}}
-let sm=parseFloat(document.getElementById('seedMoney').value.replace(/,/g,''))||0,accEvalProfit=totalAccEvalStocks-totalAccPurchaseStocks,accEvalProfitRate=totalAccPurchaseStocks>0?(accEvalProfit/totalAccPurchaseStocks)*100:0;let totalDenom=totalAccPurchaseStocks+cb;let cashRatio=totalDenom>0?((cb/totalDenom)*100).toFixed(1):"0.0";let purchaseRatio=totalDenom>0?((totalAccPurchaseStocks/totalDenom)*100).toFixed(1):"0.0";
-let totalAsset=totalAccEvalStocks+cb,seedProfit=totalAsset-sm,seedProfitRate=sm>0?(seedProfit/sm)*100:0;
-let taEl=document.getElementById('accountTotalAsset');if(taEl)taEl.innerText=totalAsset.toLocaleString()+" 원";
-let spEl=document.getElementById('accountSeedProfit');if(spEl){let sSign=seedProfit>0?"+":"";spEl.innerText=`${sSign}${seedProfit.toLocaleString()} 원 (${sSign}${seedProfitRate.toFixed(2)}%)`;spEl.className=seedProfit>0?"plus":(seedProfit<0?"minus":"");}
-document.getElementById('currentBalance').innerHTML=`${cb.toLocaleString()} 원 <span style="font-size:13px;color:#718096;font-weight:bold;">(${cashRatio}%)</span>`;document.getElementById('accountTotalPurchaseAmount').innerHTML=`${totalAccPurchaseStocks.toLocaleString()} 원 <span style="font-size:13px;color:#2b6cb0;font-weight:bold;">(${purchaseRatio}%)</span>`;let accEvalColor=totalAccEvalStocks>totalAccPurchaseStocks?"#e53e3e":(totalAccEvalStocks<totalAccPurchaseStocks?"#3182ce":"#333"),accEvalEl=document.getElementById('accountTotalEvaluationAmount');accEvalEl.innerText=totalAccEvalStocks.toLocaleString()+" 원";accEvalEl.style.color=accEvalColor;let accProfitEl=document.getElementById('accountTotalEvaluationProfit'),accSign=accEvalProfit>0?"+":"";if(totalAccPurchaseStocks===0){accProfitEl.innerText="0 원 (0.00%)";accProfitEl.className="";}else{accProfitEl.innerText=`${accSign}${accEvalProfit.toLocaleString()} 원 (${accSign}${accEvalProfitRate.toFixed(2)}%)`;accProfitEl.className=accEvalProfit>0?"plus":(accEvalProfit<0?"minus":"");}
-let stockEvalColor=te>tp?"#e53e3e":(te<tp?"#3182ce":"#333");document.getElementById('totalPurchaseAmount').innerText=`${tp.toLocaleString()} 원`;document.getElementById('totalEvaluationAmount').innerHTML=`<span style="color:${stockEvalColor};">${te.toLocaleString()} 원</span>`;let cpi=document.getElementById('currentPrice');cpi.style.color=cp===0||globalCalculatedQty===0?"#333":(cp>globalCalculatedAvgPrice?"#e53e3e":(cp<globalCalculatedAvgPrice?"#3182ce":"#333"));let eps=document.getElementById('evaluationProfit');if(cp===0||globalCalculatedQty===0){eps.innerText="0 원 (0.00%)";eps.className="";}else{let s=ep>0?"+":"";eps.innerText=`${s}${ep.toLocaleString()} 원 (${s}${epr.toFixed(2)}%)`;eps.className=ep>0?"plus":(ep<0?"minus":"");}}
+function calculateRealtimeMetrics(){
+    let cp=parseFloat(document.getElementById('currentPrice').value.replace(/,/g,''))||0, cb=parseFloat(document.getElementById('currentBalance').innerText.split('원')[0].replace(/[^0-9-]/g,''))||0, tp=globalCalculatedAvgPrice*globalCalculatedQty, te=cp*globalCalculatedQty, ep=te-tp, epr=tp>0?(ep/tp)*100:0, u=document.getElementById('userSelect').value, a=document.getElementById('accountSelect').value, accTempData={}, totalAccEvalStocks=0, totalAccPurchaseStocks=0;
+    tradeLogs.forEach(l=>{if(l.user===u&&l.account===a){if(!accTempData[l.stock])accTempData[l.stock]={qty:0,avgPrice:0};let st=accTempData[l.stock];if(l.type==='매수'){let total=(st.avgPrice*st.qty)+(l.price*l.qty);st.qty+=l.qty;st.avgPrice=st.qty>0?Math.round(total/st.qty):0;}else if(l.type==='매도'){st.qty-=l.qty;if(st.qty<=0){st.qty=0;st.avgPrice=0;}}}});
+    
+    let curS=document.getElementById('stockSelect').value;
+    let typeTotals = { '주식': 0, 'ETF': 0, '펀드': 0, '예수금': cb }; // 자산 비중 계산용 변수
+
+    for(let stk in accTempData){
+        let st=accTempData[stk];
+        if(st.qty>0){
+            totalAccPurchaseStocks+=st.qty*st.avgPrice;
+            let stkCp=0;
+            if(stk===curS)stkCp=cp;
+            else stkCp=stockPrices[stk]?parseFloat(String(stockPrices[stk]).replace(/,/g,'')):0;
+            if(stkCp===0)stkCp=st.avgPrice;
+            let evalAmt = st.qty*stkCp;
+            totalAccEvalStocks+=evalAmt;
+            
+            // 자산 분류별 평가금액 누적
+            let stObj = (accountStocksMap[`${u}_${a}`]||[]).find(x=>x.name===stk);
+            let sType = stObj ? stObj.type : '주식';
+            if (sType === '현금성자산') sType = '예수금';
+            if (!typeTotals[sType]) typeTotals[sType] = 0;
+            typeTotals[sType] += evalAmt;
+        }
+    }
+    
+    let sm=parseFloat(document.getElementById('seedMoney').value.replace(/,/g,''))||0,accEvalProfit=totalAccEvalStocks-totalAccPurchaseStocks,accEvalProfitRate=totalAccPurchaseStocks>0?(accEvalProfit/totalAccPurchaseStocks)*100:0;let totalDenom=totalAccPurchaseStocks+cb;let cashRatio=totalDenom>0?((cb/totalDenom)*100).toFixed(1):"0.0";let purchaseRatio=totalDenom>0?((totalAccPurchaseStocks/totalDenom)*100).toFixed(1):"0.0";
+    let totalAsset=totalAccEvalStocks+cb,seedProfit=totalAsset-sm,seedProfitRate=sm>0?(seedProfit/sm)*100:0;
+    
+    let taEl=document.getElementById('accountTotalAsset');if(taEl)taEl.innerText=totalAsset.toLocaleString()+" 원";
+    let spEl=document.getElementById('accountSeedProfit');if(spEl){let sSign=seedProfit>0?"+":"";spEl.innerText=`${sSign}${seedProfit.toLocaleString()} 원 (${sSign}${seedProfitRate.toFixed(2)}%)`;spEl.className=seedProfit>0?"plus":(seedProfit<0?"minus":"");}
+    
+    document.getElementById('currentBalance').innerHTML=`${cb.toLocaleString()} 원 <span style="font-size:13px;color:#718096;font-weight:bold;">(${cashRatio}%)</span>`;document.getElementById('accountTotalPurchaseAmount').innerHTML=`${totalAccPurchaseStocks.toLocaleString()} 원 <span style="font-size:13px;color:#2b6cb0;font-weight:bold;">(${purchaseRatio}%)</span>`;let accEvalColor=totalAccEvalStocks>totalAccPurchaseStocks?"#e53e3e":(totalAccEvalStocks<totalAccPurchaseStocks?"#3182ce":"#333"),accEvalEl=document.getElementById('accountTotalEvaluationAmount');accEvalEl.innerText=totalAccEvalStocks.toLocaleString()+" 원";accEvalEl.style.color=accEvalColor;let accProfitEl=document.getElementById('accountTotalEvaluationProfit'),accSign=accEvalProfit>0?"+":"";if(totalAccPurchaseStocks===0){accProfitEl.innerText="0 원 (0.00%)";accProfitEl.className="";}else{accProfitEl.innerText=`${accSign}${accEvalProfit.toLocaleString()} 원 (${accSign}${accEvalProfitRate.toFixed(2)}%)`;accProfitEl.className=accEvalProfit>0?"plus":(accEvalProfit<0?"minus":"");}
+    
+    let stockEvalColor=te>tp?"#e53e3e":(te<tp?"#3182ce":"#333");document.getElementById('totalPurchaseAmount').innerText=`${tp.toLocaleString()} 원`;document.getElementById('totalEvaluationAmount').innerHTML=`<span style="color:${stockEvalColor};">${te.toLocaleString()} 원</span>`;let cpi=document.getElementById('currentPrice');cpi.style.color=cp===0||globalCalculatedQty===0?"#333":(cp>globalCalculatedAvgPrice?"#e53e3e":(cp<globalCalculatedAvgPrice?"#3182ce":"#333"));let eps=document.getElementById('evaluationProfit');if(cp===0||globalCalculatedQty===0){eps.innerText="0 원 (0.00%)";eps.className="";}else{let s=ep>0?"+":"";eps.innerText=`${s}${ep.toLocaleString()} 원 (${s}${epr.toFixed(2)}%)`;eps.className=ep>0?"plus":(ep<0?"minus":"");}
+
+    // 막대그래프 및 범례 렌더링 로직
+    let barHtml = '', legendHtml = '';
+    const colors = { '주식': '#e53e3e', 'ETF': '#3182ce', '펀드': '#d69e2e', '예수금': '#38a169' };
+    for (let t in typeTotals) {
+        if (typeTotals[t] > 0 && totalAsset > 0) {
+            let pct = (typeTotals[t] / totalAsset) * 100;
+            let color = colors[t] || '#718096';
+            barHtml += `<div style="width:${pct}%; background-color:${color}; height:100%; transition:width 0.4s;" title="${t}: ${pct.toFixed(1)}%"></div>`;
+            legendHtml += `<div style="display:flex; align-items:center; gap:5px;"><span style="display:inline-block; width:10px; height:10px; background-color:${color}; border-radius:3px;"></span><span style="font-weight:bold;">${t}</span> ${pct.toFixed(1)}%</div>`;
+        }
+    }
+    let barEl = document.getElementById('assetAllocationBar');
+    let legEl = document.getElementById('assetAllocationLegend');
+    if(barEl) barEl.innerHTML = barHtml;
+    if(legEl) legEl.innerHTML = legendHtml;
+}
 function fetchCurrentPrice(c){if(!c)return;let cpi=document.getElementById('currentPrice'),s=document.getElementById('stockSelect').value;cpi.value="조회 중...";cpi.style.color="#000000";fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${c.endsWith('.KS')||c.endsWith('.KQ')?c:c+'.KS'}?interval=1m&range=1d`)}`).then(r=>r.ok?r.json():Promise.reject()).then(d=>{let j=JSON.parse(d.contents);let p=j?.chart?.result?.[0]?.meta?.regularMarketPrice||j?.chart?.result?.[0]?.meta?.previousClose;if(p){cpi.value=Number(p).toLocaleString();stockPrices[s]=cpi.value;saveToLocalStorage();calculateRealtimeMetrics();}else throw new Error("No price data");}).catch(()=>{const savedPrice=stockPrices[s];if(savedPrice){cpi.value=savedPrice;cpi.style.color="#718096";calculateRealtimeMetrics();}else{cpi.value="";cpi.placeholder="조회 실패 (수동 입력)";}});}
 function calculateCurrentBalance(u,a,sm){let cb=sm,totalSm=sm;tradeLogs.forEach(l=>{if(l.user===u&&l.account===a){if(l.type==='매수')cb-=l.price*l.qty;if(['매도','분배금'].includes(l.type))cb+=l.price*l.qty;if(l.type==='입금'){cb+=l.price*l.qty;totalSm+=l.price*l.qty;}if(l.type==='출금'){cb-=l.price*l.qty;totalSm-=l.price*l.qty;}}});document.getElementById('currentBalance').innerText=cb.toLocaleString()+" 원";let dSm=document.getElementById('displaySeedMoney');if(dSm)dSm.innerText=totalSm.toLocaleString()+" 원";}
 function toggleDashboardSort(field){if(dashboardSort.field===field)dashboardSort.order=dashboardSort.order==='desc'?'asc':'desc';else{dashboardSort.field=field;dashboardSort.order='desc';}openUserDashboard(currentDashboardTab,true,currentDashboardFilter,currentDashboardStockFilter);}
