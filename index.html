@@ -211,17 +211,19 @@ body{font-family:'Malgun Gothic',sans-serif;margin:10px;background-color:#f5f6f9
     <div class="summary-item advanced-item"><label>씨드머니 대비 손익금(수익율)</label><span id="accountSeedProfit">0 원 (0.00%)</span></div>
     <div class="summary-item advanced-item"><label>계좌 총 배당금</label><span id="accountTotalDividend" style="color:#38a169; font-weight:bold;">0 원</span></div>
     
-    <div class="summary-item advanced-item" style="grid-column: 1 / -1; display:flex; gap:25px; flex-wrap:wrap; background:#fff; padding:15px; border:1px solid #e2e8f0; border-radius:6px; margin-top:5px;">
-        <div style="flex:1; min-width:280px; display:flex; flex-direction:column; justify-content:center;">
-            <label style="font-size:12px; font-weight:bold; color:#4a5568; margin-bottom:8px;">📊 계좌 자산 비중</label>
+    <div class="summary-item advanced-item" style="grid-column: 1 / -1; display:flex; flex-direction:row; align-items:stretch; justify-content:space-between; background:#fff; padding:15px; border:1px solid #e2e8f0; border-radius:6px; margin-top:5px; width:100%; box-sizing:border-box;">
+        
+        <div style="width:calc(50% - 10px); min-width:0; display:flex; flex-direction:column; justify-content:center;">
+            <label style="font-size:12px; font-weight:bold; color:#4a5568; margin-bottom:8px; white-space:nowrap;">📊 계좌 자산 비중</label>
             <div id="assetAllocationBar" style="display:flex; width:100%; height:20px; border-radius:6px; overflow:hidden; background:#edf2f7; box-shadow:inset 0 1px 3px rgba(0,0,0,0.1);"></div>
-            <div id="assetAllocationLegend" style="display:flex; gap:10px; font-size:11px; color:#4a5568; margin-top:8px; flex-wrap:wrap;"></div>
+            <div id="assetAllocationLegend" style="display:flex; gap:8px; font-size:11px; color:#4a5568; margin-top:8px; flex-wrap:wrap;"></div>
         </div>
         
-        <div style="width:1px; background:#e2e8f0; margin:0 5px;"></div> 
+        <div style="width:1px; background:#e2e8f0; margin:0; flex-shrink:0;"></div> 
         
-        <div style="flex:1; min-width:280px; display:flex; flex-direction:column; gap:8px;" id="accountComparisonBarsContainer">
+        <div style="width:calc(50% - 10px); min-width:0; display:flex; flex-direction:column; justify-content:center; gap:8px;" id="accountComparisonBarsContainer">
         </div>
+        
     </div>
 </div>
 
@@ -469,33 +471,35 @@ function calculateRealtimeMetrics(){
     let purPct = maxBarVal > 0 ? (totalAccPurchaseStocks / maxBarVal) * 100 : 0;
     let assetPct = maxBarVal > 0 ? (totalAsset / maxBarVal) * 100 : 0;
 
+    /* 오른쪽 비교 그래프의 내부 넓이 고정값(120px, 90px 등)을 제거하고,
+       글자가 넘치지 않도록 flex 비율과 퍼센트로 재구성하여 무조건 50% 영역에 딱 맞게 출력되게 수정함 */
     let compBarsContainer = document.getElementById('accountComparisonBarsContainer');
     if(compBarsContainer) {
         compBarsContainer.innerHTML = `
-            <label style="font-size:12px; font-weight:bold; color:#4a5568; margin-bottom:2px;">📈 계좌 자산 규모 비교</label>
+            <label style="font-size:12px; font-weight:bold; color:#4a5568; margin-bottom:2px; white-space:nowrap;">📈 계좌 자산 규모 비교</label>
             
-            <div style="display:flex; align-items:center; gap:10px;">
-                <div style="width:120px; font-size:11px; font-weight:bold; color:#718096;">초기 씨드머니</div>
-                <div style="flex:1; background:#edf2f7; height:14px; border-radius:4px; overflow:hidden;">
+            <div style="display:flex; align-items:center; gap:5px; width:100%;">
+                <div style="flex:0 0 60px; font-size:10px; font-weight:bold; color:#718096; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="초기 씨드머니">초기투자금</div>
+                <div style="flex:1; background:#edf2f7; height:14px; border-radius:4px; overflow:hidden; min-width:10px;">
                     <div style="width:${smPct}%; background:#a0aec0; height:100%; transition:width 0.4s ease-out;"></div>
                 </div>
-                <div style="width:90px; font-size:11px; text-align:right; font-weight:bold; color:#718096;">${sm.toLocaleString()} 원</div>
+                <div style="flex:0 0 70px; font-size:10px; text-align:right; font-weight:bold; color:#718096; white-space:nowrap;">${sm.toLocaleString()}원</div>
             </div>
             
-            <div style="display:flex; align-items:center; gap:10px;">
-                <div style="width:120px; font-size:11px; font-weight:bold; color:#3182ce;">계좌 총 매입금액</div>
-                <div style="flex:1; background:#edf2f7; height:14px; border-radius:4px; overflow:hidden;">
+            <div style="display:flex; align-items:center; gap:5px; width:100%;">
+                <div style="flex:0 0 60px; font-size:10px; font-weight:bold; color:#3182ce; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="계좌 총 매입금액">총매입금액</div>
+                <div style="flex:1; background:#edf2f7; height:14px; border-radius:4px; overflow:hidden; min-width:10px;">
                     <div style="width:${purPct}%; background:#3182ce; height:100%; transition:width 0.4s ease-out;"></div>
                 </div>
-                <div style="width:90px; font-size:11px; text-align:right; font-weight:bold; color:#3182ce;">${totalAccPurchaseStocks.toLocaleString()} 원</div>
+                <div style="flex:0 0 70px; font-size:10px; text-align:right; font-weight:bold; color:#3182ce; white-space:nowrap;">${totalAccPurchaseStocks.toLocaleString()}원</div>
             </div>
             
-            <div style="display:flex; align-items:center; gap:10px;">
-                <div style="width:120px; font-size:11px; font-weight:bold; color:${totalAsset >= sm ? '#e53e3e' : '#3182ce'};">총 평가액(예수금포함)</div>
-                <div style="flex:1; background:#edf2f7; height:14px; border-radius:4px; overflow:hidden;">
+            <div style="display:flex; align-items:center; gap:5px; width:100%;">
+                <div style="flex:0 0 60px; font-size:10px; font-weight:bold; color:${totalAsset >= sm ? '#e53e3e' : '#3182ce'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="총 평가액(예수금포함)">총평가금액</div>
+                <div style="flex:1; background:#edf2f7; height:14px; border-radius:4px; overflow:hidden; min-width:10px;">
                     <div style="width:${assetPct}%; background:${totalAsset >= sm ? '#e53e3e' : '#3182ce'}; height:100%; transition:width 0.4s ease-out;"></div>
                 </div>
-                <div style="width:90px; font-size:11px; text-align:right; font-weight:bold; color:${totalAsset >= sm ? '#e53e3e' : '#3182ce'};">${totalAsset.toLocaleString()} 원</div>
+                <div style="flex:0 0 70px; font-size:10px; text-align:right; font-weight:bold; color:${totalAsset >= sm ? '#e53e3e' : '#3182ce'}; white-space:nowrap;">${totalAsset.toLocaleString()}원</div>
             </div>
         `;
     }
