@@ -217,7 +217,10 @@ body{font-family:'Malgun Gothic',sans-serif;margin:10px;background-color:#f5f6f9
     </div>
 </div>
 
-<div id="stockSummaryTitle" style="font-size:14px; font-weight:bold; color:#2b6cb0; margin-bottom: 8px;">📈 선택 종목 요약 정보</div>
+<div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 8px;">
+    <div id="stockSummaryTitle" style="font-size:14px; font-weight:bold; color:#2b6cb0;">📈 선택 종목 요약 정보</div>
+    <button class="btn-small-toggle" id="btnStockSummaryToggle" onclick="toggleStockSummary()">기본 모드</button>
+</div>
 <div class="summary-box">
     <div class="summary-item"><label>해당 종목 평단가 (보유수량)</label><span id="avgPriceAndQty" style="color:#2b6cb0; font-weight:bold;">0 원 (0 주)</span></div>
     <div class="summary-item input-highlight"><label>📊 현재가 입력 (원)</label><input type="text" id="currentPrice" placeholder="조회 중..." oninput="formatInputValue(this); updateStockPriceMap();"></div>
@@ -226,6 +229,35 @@ body{font-family:'Malgun Gothic',sans-serif;margin:10px;background-color:#f5f6f9
     <div class="summary-item"><label>평가손익 (수익률)</label><span id="evaluationProfit">0 원 (0.00%)</span></div>
     <div class="summary-item"><label>총 실현손익 (해당종목)</label><span id="totalProfit">0 원</span></div>
     <div class="summary-item"><label>총 배당금 (해당종목)</label><span id="totalDividend" style="color:#38a169;font-weight:bold;">0 원</span></div>
+    
+    <div id="stockSummaryExtended" class="summary-item" style="grid-column: 1 / -1; display:none; flex-direction:column; gap:20px; background:#fff; padding:15px; border:1px solid #e2e8f0; border-radius:6px; margin-top:5px;">
+        <div id="stockAccountComparisonContainer" style="display:flex; flex-direction:column; gap:8px;"></div>
+
+        <div style="width:100%; height:1px; background:#e2e8f0;"></div>
+
+        <div class="chart-row-group" style="width:100%;">
+            <div style="flex:1; min-width:0;">
+                <div style="display:flex; align-items:center; gap:5px; font-size:12px; font-weight:bold; color:#4a5568; margin-bottom:8px; white-space:nowrap;">
+                    <span>📈</span>
+                    <select id="stockProfitYearSelect" onchange="renderStockExtendedCharts(null, null, null, this.value)" style="padding:2px 4px; border:1px solid #cbd5e0; border-radius:4px; font-weight:bold; font-size:12px; color:#2b6cb0; cursor:pointer; outline:none; appearance:auto; -webkit-appearance:auto;"></select>
+                    <span>년 월별 실현손익 (현재 종목)</span>
+                </div>
+                <div style="position:relative; height:180px; width:100%;">
+                    <canvas id="stockProfitChart"></canvas>
+                </div>
+            </div>
+            <div style="flex:1; min-width:0;">
+                <div style="display:flex; align-items:center; gap:5px; font-size:12px; font-weight:bold; color:#4a5568; margin-bottom:8px; white-space:nowrap;">
+                    <span>💰</span>
+                    <select id="stockDividendYearSelect" onchange="renderStockExtendedCharts(null, null, null, this.value)" style="padding:2px 4px; border:1px solid #cbd5e0; border-radius:4px; font-weight:bold; font-size:12px; color:#2b6cb0; cursor:pointer; outline:none; appearance:auto; -webkit-appearance:auto;"></select>
+                    <span>년 월별 배당금 (현재 종목)</span>
+                </div>
+                <div style="position:relative; height:180px; width:100%;">
+                    <canvas id="stockDividendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div class="view-title" id="viewTitle" style="display:none;"></div>
@@ -252,6 +284,9 @@ let isAccSummaryExpanded=false;
 let isTradeLogExpanded=false;
 let myProfitChart = null;
 let myDividendChart = null;
+let isStockSummaryExpanded = false;
+let myStockProfitChart = null;
+let myStockDividendChart = null;
 
 window.onload=function(){document.getElementById('tradeDate').value=new Date().toISOString().substring(0,10);loadFromLocalStorage();renderSelectOptions();loadSeedMoney();calculateAll();};
 function saveToLocalStorage(){let ls=localStorage;ls.setItem('calculator_users',JSON.stringify(users));ls.setItem('calculator_userAccountsMap',JSON.stringify(userAccountsMap));ls.setItem('calculator_accountStocksMap',JSON.stringify(accountStocksMap));ls.setItem('calculator_tradeLogs',JSON.stringify(tradeLogs));ls.setItem('calculator_stockPrices',JSON.stringify(stockPrices));ls.setItem('calculator_etfDividends',JSON.stringify(etfDividends));}
@@ -286,6 +321,20 @@ function toggleAccSummary(){
         let u = document.getElementById('userSelect').value;
         let a = document.getElementById('accountSelect').value;
         if(u && a) renderYearlyCharts(u, a);
+    } else {
+        ext.style.display='none';
+        btn.innerText='기본 모드';
+    }
+}
+
+function toggleStockSummary(){
+    isStockSummaryExpanded = !isStockSummaryExpanded;
+    let ext = document.getElementById('stockSummaryExtended');
+    let btn = document.getElementById('btnStockSummaryToggle');
+    if(isStockSummaryExpanded){
+        ext.style.display='flex';
+        btn.innerText='확장 모드 닫기';
+        renderStockExtendedCharts();
     } else {
         ext.style.display='none';
         btn.innerText='기본 모드';
@@ -615,6 +664,175 @@ function renderYearlyCharts(u, a, selectedYear) {
     });
 }
 
+function renderStockExtendedCharts(u, a, s, selectedYear) {
+    u = u || document.getElementById('userSelect').value;
+    a = a || document.getElementById('accountSelect').value;
+    s = s || document.getElementById('stockSelect').value;
+    if(!u || !s) return;
+
+    let currentYear = new Date().getFullYear();
+    let pSel = document.getElementById('stockProfitYearSelect');
+    let dSel = document.getElementById('stockDividendYearSelect');
+    let targetYear = selectedYear ? parseInt(selectedYear) : (pSel && pSel.value ? parseInt(pSel.value) : currentYear);
+
+    // 1. 계좌별 보유 현황 (가로 바 그래프 로직)
+    let accData = {};
+    let totalMaxEval = 0;
+    let currentPriceVal = parseFloat(document.getElementById('currentPrice').value.replace(/,/g, '')) || 0;
+    
+    let stockLogs = tradeLogs.filter(log => log.user === u && log.stock === s).sort((x, y) => x.date.localeCompare(y.date));
+    stockLogs.forEach(log => {
+        if(!accData[log.account]) accData[log.account] = {qty: 0, avgPrice: 0, profit: 0, eval: 0, purchase: 0};
+        let st = accData[log.account];
+        if(log.type === '매수') {
+            let amt = Math.round(log.price * log.qty);
+            let total = (st.avgPrice * st.qty) + amt;
+            st.qty += log.qty;
+            st.avgPrice = st.qty > 0 ? Math.round(total / st.qty) : 0;
+        } else if(log.type === '매도') {
+            st.profit += Math.round((log.price - st.avgPrice) * log.qty);
+            st.qty -= log.qty;
+            if(st.qty <= 0) { st.qty = 0; st.avgPrice = 0; }
+        }
+    });
+
+    let validAccs = [];
+    for(let acc in accData) {
+        if (a !== '전체계좌' && acc !== a) continue;
+        let st = accData[acc];
+        if(st.qty > 0) {
+            st.purchase = st.avgPrice * st.qty;
+            st.eval = Math.round(currentPriceVal * st.qty);
+            
+            // 펀드의 경우 평가금액을 매입금으로 임시 대체 (계좌 차트와 동일 로직)
+            let f = (accountStocksMap[`${u}_${acc}`]||[]).find(x => x.name === s);
+            const isFund = f && (f.type === '펀드' || (f.code && (f.code === '펀드' || f.code.includes('펀드'))));
+            if(isFund) st.eval = st.purchase; 
+
+            if(st.eval > totalMaxEval) totalMaxEval = st.eval;
+            validAccs.push({acc: acc, data: st});
+        }
+    }
+
+    let compContainer = document.getElementById('stockAccountComparisonContainer');
+    if(compContainer) {
+        if(validAccs.length > 0) {
+            let html = `<label style="font-size:12px; font-weight:bold; color:#4a5568; margin-bottom:4px; text-align:left;">📊 계좌별 보유 현황 (평가금액 기준)</label>`;
+            validAccs.sort((x, y) => y.data.eval - x.data.eval).forEach(item => {
+                let st = item.data;
+                let pct = totalMaxEval > 0 ? (st.eval / totalMaxEval) * 100 : 0;
+                let eProf = st.eval - st.purchase;
+                let eRate = st.purchase > 0 ? (eProf / st.purchase * 100).toFixed(2) : "0.00";
+                let eSign = eProf > 0 ? "+" : "";
+                let color = st.eval > st.purchase ? '#e53e3e' : (st.eval < st.purchase ? '#3182ce' : '#718096');
+                
+                html += `
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom: 6px;">
+                    <div style="width:110px; font-size:11px; font-weight:bold; color:#4a5568; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${item.acc}">📁 ${item.acc}</div>
+                    <div style="flex:1; background:#edf2f7; height:24px; border-radius:4px; position:relative; box-shadow:inset 0 1px 2px rgba(0,0,0,0.1); overflow:hidden;">
+                        <div style="width:${pct}%; background:${color}; height:100%; transition:width 0.4s ease-out; opacity:0.85;"></div>
+                        <div style="position:absolute; left:8px; top:0; height:100%; display:flex; align-items:center; font-size:11px; font-weight:bold; color:#000000; text-shadow: none;">
+                            ${st.avgPrice.toLocaleString()}원 (${st.qty.toLocaleString()}주)
+                        </div>
+                    </div>
+                    <div style="width:140px; font-size:11px; text-align:right; font-weight:bold; color:${color}; line-height:1.3;">
+                        ${st.eval.toLocaleString()}원<br>
+                        <span style="font-size:10px;">(${eSign}${eProf.toLocaleString()} / ${eSign}${eRate}%)</span>
+                    </div>
+                </div>`;
+            });
+            compContainer.innerHTML = html;
+            compContainer.style.display = 'flex';
+        } else {
+            compContainer.style.display = 'none';
+        }
+    }
+
+    // 2. 월별 세로 바 차트 (실현손익 및 배당금) 로직
+    let availableYears = new Set([currentYear, targetYear]);
+    stockLogs.forEach(l => {
+        if((a === "전체계좌" || l.account === a) && l.date) {
+            availableYears.add(parseInt(l.date.substring(0, 4)));
+        }
+    });
+
+    let yearsArr = Array.from(availableYears).sort((x, y) => y - x);
+    let optionsHtml = yearsArr.map(y => `<option value="${y}">${y}</option>`).join('');
+    if(pSel) { pSel.innerHTML = optionsHtml; pSel.value = targetYear; }
+    if(dSel) { dSel.innerHTML = optionsHtml; dSel.value = targetYear; }
+
+    let monthlyProfit = Array(12).fill(0);
+    let monthlyDividend = Array(12).fill(0);
+    let tempQtyAvg = {};
+
+    stockLogs.forEach(l => {
+        if(a === "전체계좌" || l.account === a) {
+            let year = parseInt(l.date.substring(0, 4));
+            let month = parseInt(l.date.substring(5, 7)) - 1;
+
+            if (!tempQtyAvg[l.account]) tempQtyAvg[l.account] = {qty: 0, avgPrice: 0};
+            let st = tempQtyAvg[l.account];
+
+            if(l.type === '매수') {
+                let total = (st.avgPrice * st.qty) + Math.round(l.price * l.qty);
+                st.qty += l.qty;
+                st.avgPrice = st.qty > 0 ? Math.round(total / st.qty) : 0;
+            } else if(l.type === '매도') {
+                if(year === targetYear) {
+                    let realized = Math.round((l.price - st.avgPrice) * l.qty);
+                    monthlyProfit[month] += realized;
+                }
+                st.qty -= l.qty;
+                if(st.qty <= 0) { st.qty = 0; st.avgPrice = 0; }
+            } else if(l.type === '분배금') {
+                if(year === targetYear) {
+                    monthlyDividend[month] += Math.round(l.price * l.qty);
+                }
+            }
+        }
+    });
+
+    const labels = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
+    const dlConfig = {
+        color: 'black', anchor: 'start', align: 'top', offset: 8, rotation: -90,
+        font: { size: 10, weight: 'bold' },
+        formatter: function(value) { return value === 0 ? '' : value.toLocaleString(); }
+    };
+
+    if(myStockProfitChart) myStockProfitChart.destroy();
+    const ctx1 = document.getElementById('stockProfitChart').getContext('2d');
+    myStockProfitChart = new Chart(ctx1, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '실현손익 (원)', data: monthlyProfit,
+                backgroundColor: monthlyProfit.map(v => v >= 0 ? 'rgba(229, 62, 62, 0.7)' : 'rgba(49, 130, 206, 0.7)'),
+                borderColor: monthlyProfit.map(v => v >= 0 ? 'rgba(229, 62, 62, 1)' : 'rgba(49, 130, 206, 1)'),
+                borderWidth: 1, borderRadius: 4
+            }]
+        },
+        plugins: [ChartDataLabels],
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, datalabels: dlConfig }, scales: { y: { beginAtZero: true } } }
+    });
+
+    if(myStockDividendChart) myStockDividendChart.destroy();
+    const ctx2 = document.getElementById('stockDividendChart').getContext('2d');
+    myStockDividendChart = new Chart(ctx2, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '배당금 (원)', data: monthlyDividend,
+                backgroundColor: 'rgba(56, 161, 105, 0.7)', borderColor: 'rgba(56, 161, 105, 1)',
+                borderWidth: 1, borderRadius: 4
+            }]
+        },
+        plugins: [ChartDataLabels],
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, datalabels: dlConfig }, scales: { y: { beginAtZero: true } } }
+    });
+}
+
 function calculateRealtimeMetrics(){
     let cp=parseFloat(document.getElementById('currentPrice').value.replace(/,/g,''))||0, 
         cb=parseFloat(document.getElementById('currentBalance').innerText.split('원')[0].replace(/[^0-9-]/g,''))||0, 
@@ -730,6 +948,7 @@ function calculateRealtimeMetrics(){
             </div>
         `;
     }
+    if(isStockSummaryExpanded) { renderStockExtendedCharts(); }
 }
 function fetchCurrentPrice(c){if(!c)return;let cpi=document.getElementById('currentPrice'),s=document.getElementById('stockSelect').value;cpi.value="조회 중...";cpi.style.color="#000000";fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${c.endsWith('.KS')||c.endsWith('.KQ')?c:c+'.KS'}?interval=1m&range=1d`)}`).then(r=>r.ok?r.json():Promise.reject()).then(d=>{let j=JSON.parse(d.contents);let p=j?.chart?.result?.[0]?.meta?.regularMarketPrice||j?.chart?.result?.[0]?.meta?.previousClose;if(p){cpi.value=Number(p).toLocaleString();stockPrices[s]=cpi.value;saveToLocalStorage();calculateRealtimeMetrics();}else throw new Error("No price data");}).catch(()=>{const savedPrice=stockPrices[s];if(savedPrice){cpi.value=savedPrice;cpi.style.color="#718096";calculateRealtimeMetrics();}else{cpi.value="";cpi.placeholder="조회 실패 (수동 입력)";}});}
 function calculateCurrentBalance(u,a,sm){
@@ -856,8 +1075,179 @@ function calculateAll(){
     if(isAccSummaryExpanded) {
         renderYearlyCharts(u, a);
     }
+    if(isStockSummaryExpanded && u && s) {
+        renderStockExtendedCharts(u, a, s);
+    }
 }
 
+function renderStockExtendedCharts(u, a, s, selectedYear) {
+    u = u || document.getElementById('userSelect').value;
+    a = a || document.getElementById('accountSelect').value;
+    s = s || document.getElementById('stockSelect').value;
+    if(!u || !s) return;
+
+    let currentYear = new Date().getFullYear();
+    let pSel = document.getElementById('stockProfitYearSelect');
+    let dSel = document.getElementById('stockDividendYearSelect');
+    let targetYear = selectedYear ? parseInt(selectedYear) : (pSel && pSel.value ? parseInt(pSel.value) : currentYear);
+
+    // 1. 계좌별 보유 현황 (가로 바 그래프 로직)
+    let accData = {};
+    let totalMaxEval = 0;
+    let currentPriceVal = parseFloat(document.getElementById('currentPrice').value.replace(/,/g, '')) || 0;
+    
+    let stockLogs = tradeLogs.filter(log => log.user === u && log.stock === s).sort((x, y) => x.date.localeCompare(y.date));
+    stockLogs.forEach(log => {
+        if(!accData[log.account]) accData[log.account] = {qty: 0, avgPrice: 0, profit: 0, eval: 0, purchase: 0};
+        let st = accData[log.account];
+        if(log.type === '매수') {
+            let amt = Math.round(log.price * log.qty);
+            let total = (st.avgPrice * st.qty) + amt;
+            st.qty += log.qty;
+            st.avgPrice = st.qty > 0 ? Math.round(total / st.qty) : 0;
+        } else if(log.type === '매도') {
+            st.profit += Math.round((log.price - st.avgPrice) * log.qty);
+            st.qty -= log.qty;
+            if(st.qty <= 0) { st.qty = 0; st.avgPrice = 0; }
+        }
+    });
+
+    let validAccs = [];
+    for(let acc in accData) {
+        if (a !== '전체계좌' && acc !== a) continue;
+        let st = accData[acc];
+        if(st.qty > 0) {
+            st.purchase = st.avgPrice * st.qty;
+            st.eval = Math.round(currentPriceVal * st.qty);
+            
+            // 펀드의 경우 평가금액을 매입금으로 임시 대체 (계좌 차트와 동일 로직)
+            let f = (accountStocksMap[`${u}_${acc}`]||[]).find(x => x.name === s);
+            const isFund = f && (f.type === '펀드' || (f.code && (f.code === '펀드' || f.code.includes('펀드'))));
+            if(isFund) st.eval = st.purchase; 
+
+            if(st.eval > totalMaxEval) totalMaxEval = st.eval;
+            validAccs.push({acc: acc, data: st});
+        }
+    }
+
+    let compContainer = document.getElementById('stockAccountComparisonContainer');
+    if(compContainer) {
+        if(validAccs.length > 0) {
+            let html = `<label style="font-size:12px; font-weight:bold; color:#4a5568; margin-bottom:4px; text-align:left;">📊 계좌별 보유 현황 (평가금액 기준)</label>`;
+            validAccs.sort((x, y) => y.data.eval - x.data.eval).forEach(item => {
+                let st = item.data;
+                let pct = totalMaxEval > 0 ? (st.eval / totalMaxEval) * 100 : 0;
+                let eProf = st.eval - st.purchase;
+                let eRate = st.purchase > 0 ? (eProf / st.purchase * 100).toFixed(2) : "0.00";
+                let eSign = eProf > 0 ? "+" : "";
+                let color = st.eval > st.purchase ? '#e53e3e' : (st.eval < st.purchase ? '#3182ce' : '#718096');
+                
+                html += `
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom: 6px;">
+                    <div style="width:110px; font-size:11px; font-weight:bold; color:#4a5568; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${item.acc}">📁 ${item.acc}</div>
+                    <div style="flex:1; background:#edf2f7; height:24px; border-radius:4px; position:relative; box-shadow:inset 0 1px 2px rgba(0,0,0,0.1); overflow:hidden;">
+                        <div style="width:${pct}%; background:${color}; height:100%; transition:width 0.4s ease-out; opacity:0.85;"></div>
+                        <div style="position:absolute; left:8px; top:0; height:100%; display:flex; align-items:center; font-size:11px; font-weight:bold; color:#000000; text-shadow: none;">
+                            ${st.avgPrice.toLocaleString()}원 (${st.qty.toLocaleString()}주)
+                        </div>
+                    </div>
+                    <div style="width:140px; font-size:11px; text-align:right; font-weight:bold; color:${color}; line-height:1.3;">
+                        ${st.eval.toLocaleString()}원<br>
+                        <span style="font-size:10px;">(${eSign}${eProf.toLocaleString()} / ${eSign}${eRate}%)</span>
+                    </div>
+                </div>`;
+            });
+            compContainer.innerHTML = html;
+            compContainer.style.display = 'flex';
+        } else {
+            compContainer.style.display = 'none';
+        }
+    }
+
+    // 2. 월별 세로 바 차트 (실현손익 및 배당금) 로직
+    let availableYears = new Set([currentYear, targetYear]);
+    stockLogs.forEach(l => {
+        if((a === "전체계좌" || l.account === a) && l.date) {
+            availableYears.add(parseInt(l.date.substring(0, 4)));
+        }
+    });
+
+    let yearsArr = Array.from(availableYears).sort((x, y) => y - x);
+    let optionsHtml = yearsArr.map(y => `<option value="${y}">${y}</option>`).join('');
+    if(pSel) { pSel.innerHTML = optionsHtml; pSel.value = targetYear; }
+    if(dSel) { dSel.innerHTML = optionsHtml; dSel.value = targetYear; }
+
+    let monthlyProfit = Array(12).fill(0);
+    let monthlyDividend = Array(12).fill(0);
+    let tempQtyAvg = {};
+
+    stockLogs.forEach(l => {
+        if(a === "전체계좌" || l.account === a) {
+            let year = parseInt(l.date.substring(0, 4));
+            let month = parseInt(l.date.substring(5, 7)) - 1;
+
+            if (!tempQtyAvg[l.account]) tempQtyAvg[l.account] = {qty: 0, avgPrice: 0};
+            let st = tempQtyAvg[l.account];
+
+            if(l.type === '매수') {
+                let total = (st.avgPrice * st.qty) + Math.round(l.price * l.qty);
+                st.qty += l.qty;
+                st.avgPrice = st.qty > 0 ? Math.round(total / st.qty) : 0;
+            } else if(l.type === '매도') {
+                if(year === targetYear) {
+                    let realized = Math.round((l.price - st.avgPrice) * l.qty);
+                    monthlyProfit[month] += realized;
+                }
+                st.qty -= l.qty;
+                if(st.qty <= 0) { st.qty = 0; st.avgPrice = 0; }
+            } else if(l.type === '분배금') {
+                if(year === targetYear) {
+                    monthlyDividend[month] += Math.round(l.price * l.qty);
+                }
+            }
+        }
+    });
+
+    const labels = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
+    const dlConfig = {
+        color: 'black', anchor: 'start', align: 'top', offset: 8, rotation: -90,
+        font: { size: 10, weight: 'bold' },
+        formatter: function(value) { return value === 0 ? '' : value.toLocaleString(); }
+    };
+
+    if(myStockProfitChart) myStockProfitChart.destroy();
+    const ctx1 = document.getElementById('stockProfitChart').getContext('2d');
+    myStockProfitChart = new Chart(ctx1, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '실현손익 (원)', data: monthlyProfit,
+                backgroundColor: monthlyProfit.map(v => v >= 0 ? 'rgba(229, 62, 62, 0.7)' : 'rgba(49, 130, 206, 0.7)'),
+                borderColor: monthlyProfit.map(v => v >= 0 ? 'rgba(229, 62, 62, 1)' : 'rgba(49, 130, 206, 1)'),
+                borderWidth: 1, borderRadius: 4
+            }]
+        },
+        plugins: [ChartDataLabels],
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, datalabels: dlConfig }, scales: { y: { beginAtZero: true } } }
+    });
+
+    if(myStockDividendChart) myStockDividendChart.destroy();
+    const ctx2 = document.getElementById('stockDividendChart').getContext('2d');
+    myStockDividendChart = new Chart(ctx2, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '배당금 (원)', data: monthlyDividend,
+                backgroundColor: 'rgba(56, 161, 105, 0.7)', borderColor: 'rgba(56, 161, 105, 1)',
+                borderWidth: 1, borderRadius: 4
+            }]
+        },
+        plugins: [ChartDataLabels],
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, datalabels: dlConfig }, scales: { y: { beginAtZero: true } } }
+    });
+}
 function openStockLoadModal(){if(document.getElementById('accountSelect').value==="전체계좌")return alert('종목 불러오기는 특정 계좌를 선택한 상태에서만 가능합니다.'); let stockMap={};Object.values(accountStocksMap).forEach(stocks=>{stocks.forEach(s=>{if(!stockMap[s.name])stockMap[s.name]={name:s.name,code:s.code||"",type:s.type||"주식"};});});let listContainer=document.getElementById('stockLoadList');listContainer.innerHTML='';let allStocks=Object.values(stockMap);if(allStocks.length===0){listContainer.innerHTML='<div style="text-align:center;padding:15px;color:#718096;font-size:13px;">등록된 종목이 없습니다.</div>';}else{allStocks.sort((a,b)=>a.name.localeCompare(b.name)).forEach(s=>{let codeText=s.code?`(${s.code})`:'';let typeText=`<span style="font-size:11px;color:#2b6cb0;background:#ebf8ff;padding:2px 4px;border-radius:4px;margin-right:5px;">${s.type}</span>`;let btn=document.createElement('button');btn.style.cssText="width:100%;text-align:left;padding:10px 15px;background:#f7fafc;border:1px solid #e2e8f0;border-radius:4px;cursor:pointer;font-size:14px;font-weight:bold;color:#4a5568;margin-bottom:4px;transition:background-color 0.2s;";btn.innerHTML=`<span>➕ ${typeText}${s.name} <span style="color:#718096;font-weight:normal;font-size:12px;margin-left:4px;">${codeText}</span></span>`;btn.onmouseover=()=>btn.style.backgroundColor='#edf2f7';btn.onmouseout=()=>btn.style.backgroundColor='#f7fafc';btn.onclick=()=>selectStockToLoad(s.name,s.code,s.type);listContainer.appendChild(btn);});}document.getElementById('stockLoadModal').style.display='flex';}
 function closeStockLoadModal(e){if(!e||e.target.id==='stockLoadModal'||e.type==='click')document.getElementById('stockLoadModal').style.display='none';}
 function selectStockToLoad(name,code,type){document.getElementById('newStockName').value=name;document.getElementById('newStockCode').value=code;document.getElementById('newStockType').value=type||"주식";closeStockLoadModal();}
