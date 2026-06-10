@@ -266,28 +266,54 @@ let myProfitChart=null, myDividendChart=null, myStockProfitChart=null, myStockDi
 window.onload=function(){document.getElementById('tradeDate').value=new Date().toISOString().substring(0,10);loadFromLocalStorage();renderSelectOptions();loadSeedMoney();calculateAll();};
 
 // ============================
-// 실시간 현재가 외부 API 호출 함수 (새로 추가됨)
+// 실시간 현재가 외부 API 호출 함수 (수정됨)
 // ============================
 async function fetchCurrentPrice(stockName, stockCode) {
     let cPriceInput = document.getElementById('currentPrice');
     cPriceInput.placeholder = "실시간 조회 중...";
     try {
         let code = stockCode.trim();
-        // 브라우저 CORS 제한을 우회하기 위해 allorigins 무료 프록시 사용 (개인용 크롤링에 적합)
-        let url = `https://api.allorigins.win/get?url=${encodeURIComponent('https://finance.naver.com/item/main.naver?code=' + code)}`;
+        if(!code) throw new Error("종목 코드 없음");
+
+        // 1차 시도: 네이버 금융 모바일 API (가장 안정적인 JSON 반환, 주식/ETF 모두 호환)
+        let url = `https://api.allorigins.win/get?url=${encodeURIComponent('https://m.stock.naver.com/api/stock/' + code + '/basic')}`;
         let res = await fetch(url);
+        
         if (res.ok) {
             let data = await res.json();
+            if (data.contents) {
+                let parsed = JSON.parse(data.contents);
+                // JSON 구조에서 현재가(closePrice) 추출
+                if (parsed.closePrice) {
+                    let price = parsed.closePrice;
+                    cPriceInput.value = price;
+                    stockPrices[stockName] = price; // 최신 가격 저장
+                    saveToLocalStorage();
+                    
+                    // 가격이 갱신되었으므로 요약 정보 재계산
+                    calculateStockSummary();
+                    calculateAccountSummary();
+                    cPriceInput.placeholder = "현재가 입력 (원)";
+                    return; // 성공 시 함수 종료
+                }
+            }
+        }
+        
+        // 2차 시도: 모바일 API 호출 실패 시 기존 웹 크롤링 방식으로 Fallback
+        let fallbackUrl = `https://api.allorigins.win/get?url=${encodeURIComponent('https://finance.naver.com/item/main.naver?code=' + code)}`;
+        let fallbackRes = await fetch(fallbackUrl);
+        if (fallbackRes.ok) {
+            let fallbackData = await fallbackRes.json();
             let parser = new DOMParser();
-            let doc = parser.parseFromString(data.contents, "text/html");
+            let doc = parser.parseFromString(fallbackData.contents, "text/html");
             let priceEl = doc.querySelector('.no_today .blind');
+            
             if (priceEl) {
-                let price = priceEl.textContent;
+                let price = priceEl.textContent.trim();
                 cPriceInput.value = price;
-                stockPrices[stockName] = price; // 최신 가격 저장
+                stockPrices[stockName] = price;
                 saveToLocalStorage();
                 
-                // 가격이 갱신되었으므로 요약 정보 재계산
                 calculateStockSummary();
                 calculateAccountSummary();
                 cPriceInput.placeholder = "현재가 입력 (원)";
@@ -297,6 +323,8 @@ async function fetchCurrentPrice(stockName, stockCode) {
     } catch(e) {
         console.error("현재가 연동 오류:", e);
     }
+    
+    // API 및 크롤링 모두 실패한 경우
     cPriceInput.placeholder = "조회 실패 (수동입력)";
 }
 
