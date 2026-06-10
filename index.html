@@ -145,7 +145,10 @@ body{font-family:'Malgun Gothic',sans-serif;margin:10px;background-color:#f5f6f9
         <select class="quick-dropdown" id="quickAccountSelect" onchange="handleAccountChange(this.value)"></select>
     </div>
     <div class="quick-select-row" style="flex: 6;">
-        <label>🔍 종목 전환</label>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label style="margin:0;">🔍 종목 전환</label>
+            <button id="btnRefreshPrices" class="btn-small-toggle" style="background-color:#3182ce; color:white; border:none; padding:3px 8px; font-size:11px; margin:0;" onclick="refreshAllStockPrices()">🔄 보유종목 현재가 갱신</button>
+        </div>
         <select class="quick-dropdown" id="quickStockSelect" onchange="selectStockFromQuickSelect(this.value)"></select>
     </div>
 </div>
@@ -266,8 +269,110 @@ let myProfitChart=null, myDividendChart=null, myStockProfitChart=null, myStockDi
 window.onload=function(){document.getElementById('tradeDate').value=new Date().toISOString().substring(0,10);loadFromLocalStorage();renderSelectOptions();loadSeedMoney();calculateAll();};
 
 // ============================
-// 실시간 현재가 외부 API 호출 함수 (수정됨)
+// 전체 보유 종목 실시간 가격 갱신 함수 (새로 추가)
 // ============================
+async function refreshAllStockPrices() {
+    let u = document.getElementById('userSelect').value;
+    if (!u) return alert("사용자를 선택해주세요.");
+
+    let btn = document.getElementById('btnRefreshPrices');
+    let originalText = btn.innerHTML;
+    btn.innerHTML = "⏳ 갱신 중...";
+    btn.disabled = true;
+
+    // 현재 사용자의 1주 이상 보유 종목 추출
+    let heldStocks = {};
+    tradeLogs.forEach(l => {
+        if (l.user === u) {
+            if (!heldStocks[l.stock]) heldStocks[l.stock] = 0;
+            if (l.type === '매수') heldStocks[l.stock] += l.qty;
+            if (l.type === '매도') heldStocks[l.stock] -= l.qty;
+        }
+    });
+
+    let fetchPromises = [];
+    for (let s in heldStocks) {
+        if (heldStocks[s] > 0) {
+            let code = null;
+            let isFund = false;
+            // 해당 종목의 코드를 찾음 (계좌 순회)
+            for (let acc of (userAccountsMap[u] || [])) {
+                let stObj = (accountStocksMap[`${u}_${acc}`] || []).find(x => x.name === s);
+                if (stObj) {
+                    code = stObj.code;
+                    if (stObj.type === '펀드' || (code && (code === '펀드' || code.includes('펀드')))) {
+                        isFund = true;
+                    }
+                    break;
+                }
+            }
+            if (code && !isFund) {
+                fetchPromises.push(getSingleStockPrice(s, code));
+            }
+        }
+    }
+
+    if (fetchPromises.length === 0) {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        alert("갱신할 보유 종목(주식/ETF)이 없습니다.");
+        return;
+    }
+
+    // 비동기 일괄 갱신 실행
+    let results = await Promise.allSettled(fetchPromises);
+    let updatedCount = 0;
+    
+    results.forEach(res => {
+        if (res.status === 'fulfilled' && res.value && res.value.price) {
+            stockPrices[res.value.name] = res.value.price;
+            updatedCount++;
+        }
+    });
+
+    if (updatedCount > 0) {
+        saveToLocalStorage();
+        calculateAll();
+        alert(`${updatedCount}개 종목의 현재가가 성공적으로 갱신되었습니다.`);
+    } else {
+        alert("현재가를 불러오지 못했습니다. (종목 코드를 확인해주세요)");
+    }
+
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+}
+
+// 갱신을 돕는 단일 종목 가격 조회 헬퍼 함수
+async function getSingleStockPrice(stockName, stockCode) {
+    let code = stockCode.trim();
+    if(!code) return {name: stockName, price: null};
+
+    try {
+        let url = `https://api.allorigins.win/get?url=${encodeURIComponent('https://m.stock.naver.com/api/stock/' + code + '/basic')}`;
+        let res = await fetch(url);
+        if (res.ok) {
+            let data = await res.json();
+            if (data.contents) {
+                let parsed = JSON.parse(data.contents);
+                if (parsed.closePrice) return {name: stockName, price: parsed.closePrice};
+            }
+        }
+        
+        let fallbackUrl = `https://api.allorigins.win/get?url=${encodeURIComponent('https://finance.naver.com/item/main.naver?code=' + code)}`;
+        let fallbackRes = await fetch(fallbackUrl);
+        if (fallbackRes.ok) {
+            let fallbackData = await fallbackRes.json();
+            let parser = new DOMParser();
+            let doc = parser.parseFromString(fallbackData.contents, "text/html");
+            let priceEl = doc.querySelector('.no_today .blind');
+            if (priceEl) return {name: stockName, price: priceEl.textContent.trim()};
+        }
+    } catch (e) {
+        console.error("가격 갱신 오류:", stockName, e);
+    }
+    return {name: stockName, price: null};
+}
+
 async function fetchCurrentPrice(stockName, stockCode) {
     let cPriceInput = document.getElementById('currentPrice');
     cPriceInput.placeholder = "실시간 조회 중...";
@@ -275,7 +380,6 @@ async function fetchCurrentPrice(stockName, stockCode) {
         let code = stockCode.trim();
         if(!code) throw new Error("종목 코드 없음");
 
-        // 1차 시도: 네이버 금융 모바일 API (가장 안정적인 JSON 반환, 주식/ETF 모두 호환)
         let url = `https://api.allorigins.win/get?url=${encodeURIComponent('https://m.stock.naver.com/api/stock/' + code + '/basic')}`;
         let res = await fetch(url);
         
@@ -283,23 +387,20 @@ async function fetchCurrentPrice(stockName, stockCode) {
             let data = await res.json();
             if (data.contents) {
                 let parsed = JSON.parse(data.contents);
-                // JSON 구조에서 현재가(closePrice) 추출
                 if (parsed.closePrice) {
                     let price = parsed.closePrice;
                     cPriceInput.value = price;
-                    stockPrices[stockName] = price; // 최신 가격 저장
+                    stockPrices[stockName] = price;
                     saveToLocalStorage();
                     
-                    // 가격이 갱신되었으므로 요약 정보 재계산
                     calculateStockSummary();
                     calculateAccountSummary();
                     cPriceInput.placeholder = "현재가 입력 (원)";
-                    return; // 성공 시 함수 종료
+                    return; 
                 }
             }
         }
         
-        // 2차 시도: 모바일 API 호출 실패 시 기존 웹 크롤링 방식으로 Fallback
         let fallbackUrl = `https://api.allorigins.win/get?url=${encodeURIComponent('https://finance.naver.com/item/main.naver?code=' + code)}`;
         let fallbackRes = await fetch(fallbackUrl);
         if (fallbackRes.ok) {
@@ -324,7 +425,6 @@ async function fetchCurrentPrice(stockName, stockCode) {
         console.error("현재가 연동 오류:", e);
     }
     
-    // API 및 크롤링 모두 실패한 경우
     cPriceInput.placeholder = "조회 실패 (수동입력)";
 }
 
@@ -747,13 +847,11 @@ function calculateAll() {
             cPriceInput.style.color = "#333";
             cPriceInput.value = stockPrices[s] || '';
             
-            // --- 추가된 현재가 조회 로직 트리거 ---
             if (actS && actS.code) {
                 fetchCurrentPrice(s, actS.code);
             } else {
                 cPriceInput.placeholder = "종목코드 없음 (수동입력)";
             }
-            // -----------------------------------
         }
     }
 
