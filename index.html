@@ -135,30 +135,32 @@ body{font-family:'Malgun Gothic',sans-serif;margin:10px;background-color:#f5f6f9
     <button class="btn-submit" id="submitBtn" type="button" onclick="handleSubmit()">내역 추가</button>
 </div>
 <div class="dashboard-btn-group"><button class="btn-dashboard" onclick="openUserDashboard('portfolio')">📂 보유현황 보기</button><button class="btn-dashboard btn-stock-dash" onclick="openStockDashboard()">📊 현재종목 계좌별 현황</button><button class="btn-dashboard" style="background-color:#dd6b20;" onclick="openUserDashboard('profit')">📈 월별 실현손익</button><button class="btn-dashboard" style="background-color:#319795;" onclick="openUserDashboard('dividend')">💰 월별 배당금</button></div>
-<div class="quick-select-container">
-    <div class="quick-select-row" style="flex: 2;">
+<div class="quick-select-container" style="align-items: flex-end;">
+    <div class="quick-select-row" style="flex: 1;">
         <label>👤 사용자 전환</label>
         <select class="quick-dropdown" id="quickUserSelect" onchange="handleUserChange(this.value)"></select>
     </div>
-    <div class="quick-select-row" style="flex: 2;">
+    <div class="quick-select-row" style="flex: 1;">
         <label>🏦 계좌 전환</label>
         <select class="quick-dropdown" id="quickAccountSelect" onchange="handleAccountChange(this.value)"></select>
     </div>
-    <div class="quick-select-row" style="flex: 6;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <label style="margin:0;">🔍 종목 전환</label>
-            <button id="btnRefreshPrices" class="btn-small-toggle" style="background-color:#3182ce; color:white; border:none; padding:3px 8px; font-size:11px; margin:0;" onclick="refreshAllStockPrices()">🔄 보유종목 현재가 갱신</button>
+    <div class="quick-select-row" style="flex: 2;">
+        <label>🔍 종목 전환</label>
+        <div style="display:flex; gap:10px; align-items:center;">
+            <select class="quick-dropdown" id="quickStockSelect" onchange="selectStockFromQuickSelect(this.value)" style="flex:1;"></select>
+            <button id="btnRefreshPrices" class="btn-small-toggle" style="background-color:#3182ce; color:white; border:none; padding:0 12px; font-size:12px; height:40px; margin:0; white-space:nowrap; border-radius:4px;" onclick="refreshAllStockPrices()">🔄 보유종목 현재가 갱신</button>
         </div>
-        <select class="quick-dropdown" id="quickStockSelect" onchange="selectStockFromQuickSelect(this.value)"></select>
     </div>
 </div>
+
 <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 8px;">
     <div id="accountSummaryTitle" style="font-size:14px; font-weight:bold; color:#2b6cb0;">🏦 계좌 요약 정보</div>
     <button class="btn-small-toggle" id="btnAccSummaryToggle" onclick="toggleAccSummary()">기본 모드</button>
 </div>
 <div class="summary-box" style="margin-bottom: 25px;">
     <div class="summary-item"><label>초기 씨드머니 (원)</label><input type="text" id="seedMoney" value="10,000,000" oninput="formatInputValue(this); saveSeedMoney(); calculateAll();"></div>
-    <div class="summary-item"><label>총 적용 씨드머니</label><span id="displaySeedMoney" style="color:#2b6cb0; font-weight:bold;">0 원</span></div>
+    <div class="summary-item" style="display:none;"><label>총 적용 씨드머니</label><span id="displaySeedMoney" style="color:#2b6cb0; font-weight:bold;">0 원</span></div>
+    
     <div class="summary-item"><label>계좌 총 매입금액</label><span id="accountTotalPurchaseAmount" style="color:#2b6cb0; font-weight:bold;">0 원</span></div>
     <div class="summary-item"><label>계좌 예수금</label><span id="currentBalance">0 원</span></div>
     <div class="summary-item"><label>총 평가금액(예수금제외)</label><span id="accountTotalEvaluationAmount" style="font-weight:bold;">0 원</span></div>
@@ -583,8 +585,8 @@ function calculateAccountSummary() {
     let purchaseRatio = totalDenom > 0 ? ((totalAccPurchase / totalDenom) * 100).toFixed(1) : "0.0";
 
     let totalAsset = totalAccEval + cb;
-    let seedProfit = totalAsset - totalSm;
-    let seedProfitRate = totalSm > 0 ? (seedProfit / totalSm) * 100 : 0;
+    let seedProfit = totalAsset - sm; // 초기 씨드머니(sm)와 총 평가금액(예수금포함) 기준
+    let seedProfitRate = sm > 0 ? (seedProfit / sm) * 100 : 0;
 
     document.getElementById('currentBalance').innerHTML = `${cb.toLocaleString()} 원 <span style="font-size:13px;color:#718096;font-weight:bold;">(${cashRatio}%)</span>`;
     document.getElementById('accountTotalPurchaseAmount').innerHTML = `${totalAccPurchase.toLocaleString()} 원 <span style="font-size:13px;color:#2b6cb0;font-weight:bold;">(${purchaseRatio}%)</span>`;
