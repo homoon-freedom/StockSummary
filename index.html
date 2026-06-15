@@ -2,7 +2,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 <style>
-body{font-family:'Malgun Gothic',sans-serif;margin:10px;background-color:#f5f6f9;color:#333;font-size:13px;} .container{max-width:1500px;margin:0 auto;background:#fff;padding:15px;border-radius:8px;box-shadow:0 4px 6px rgba(0,0,0,0.1);} h2{text-align:center;color:#4a5568;margin-bottom:20px;font-size:1.3rem;} .text-center{text-align:center;} .text-right{text-align:right;} .text-left{text-align:left;} .btn-toggle{width:100%;height:42px;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:bold;font-size:13px;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1);} .btn-toggle-config{background-color:#4a5568;} .btn-toggle-config:hover{background-color:#2d3748;} .config-section{display:none;flex-direction:column;gap:15px;background:#edf2f7;padding:12px;border-radius:6px;margin-bottom:20px;} .config-row-group{display:flex;gap:15px;width:100%;} .config-row-group > .config-box{flex:1;} @media(max-width:650px){.config-row-group{flex-direction:column;} .dashboard-btn-group{flex-direction:column;} .quick-select-container{flex-direction:column !important;} .chart-row-group{flex-direction:column !important;}} .chart-row-group{display:flex; flex-direction:row; gap:15px;} .config-box{background:#fff;padding:12px;border-radius:6px;border:1px solid #cbd5e0;display:flex;flex-direction:column;gap:8px;box-sizing:border-box;} .config-box .title-label{font-size:13px;font-weight:bold;color:#2b6cb0;border-bottom:1px solid #e2e8f0;padding-bottom:5px;margin-bottom:2px;} .config-group{display:flex;flex-direction:column;gap:4px;} .config-group label{font-size:11px;font-weight:bold;color:#4a5568;} .config-group select, .config-group input{padding:8px;border:1px solid #cbd5e0;border-radius:4px;font-size:14px;box-sizing:border-box;height:40px;width:100%;} .btn-full{width:100%;height:38px;border:none;border-radius:4px;cursor:pointer;font-weight:bold;font-size:12px;color:white;box-sizing:border-box;} .btn-add{background-color:#4a5568;} .btn-add:hover{background-color:#2d3748;} .btn-del{background-color:#e53e3e;} .btn-del:hover{background-color:#c53030;} .btn-toggle-input{background-color:#3182ce;} .btn-toggle-input:hover{background-color:#2b6cb0;} .input-form{display:none;flex-direction:column;gap:10px;background:#fff;padding:12px;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:15px;box-shadow:inset 0 1px 3px rgba(0,0,0,0.05);box-sizing:border-box;} .input-form .form-row{display:flex;gap:10px;width:100%;} .input-form .form-row .form-group{flex:1;} .input-form .form-group{display:flex;flex-direction:column;gap:4px;width:100%;box-sizing:border-box;} .input-form .form-group label{font-size:12px;font-weight:bold;color:#4a5568;} .input-form .form-group input, .input-form .form-group select{padding:8px;border:1px solid #cbd5e0;border-radius:4px;font-size:14px;box-sizing:border-box;height:40px;width:100%;background-color:#fff;font-family:inherit;appearance:none;-webkit-appearance:none;color:#111;} .btn-submit{height:40px;background-color:#2b6cb0;color:white;border:none;border-radius:4px;cursor:pointer;font-weight:bold;font-size:14px;margin-top:5px;width:100%;box-sizing:border-box;} .dashboard-btn-group{display:flex;gap:10px;margin-bottom:20px;width:100%;} .btn-dashboard{flex:1;height:45px;background-color:#2b6cb0;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:bold;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1);transition:background-color 0.2s;} .btn-dashboard:hover{background-color:#2c5282;} .btn-stock-dash{background-color:#38a169;} .btn-stock-dash:hover{background-color:#2f855a;} .summary-box{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;background:#f7fafc;border:1px solid #e2e8f0;padding:12px;border-radius:6px;margin-bottom:20px;} .summary-item{display:flex;flex-direction:column;} .summary-item label{font-size:11px;color:#718096;margin-bottom:3px; text-align:right; display:block; width:100%; box-sizing:border-box;} .summary-item span, .summary-item input{font-size:14px;font-weight:bold;border:none;background:transparent;text-align:right; display:block; width:100%; box-sizing:border-box;} .summary-item.input-highlight input{border-bottom:2px solid #3182ce;color:#333;} .quick-select-container{background-color:#edf2f7;padding:12px;border-radius:6px;border:1px solid #cbd5e0;margin-bottom:15px;display:flex;flex-direction:row;gap:10px;} .quick-select-row{display:flex;flex-direction:column;gap:4px;} .quick-select-row label{font-size:11px;font-weight:bold;color:#2b6cb0;} .quick-dropdown{width:100%;height:40px;padding:8px;border:1px solid #cbd5e0;border-radius:4px;font-size:14px;font-weight:bold;color:#4a5568;background-color:#fff;box-sizing:border-box;} table{width:100%;border-collapse:collapse;margin-top:10px;table-layout:fixed;} th, td{border:1px solid #e2e8f0;padding:8px 4px;font-size:13px;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;} th{background-color:#edf2f7;color:#4a5568;font-weight:bold;text-align:center;font-size:12px;line-height:1.4;} .row-main{background-color:#ffffff;} .clickable-date{font-size:12px;font-weight:bold;color:#2b6cb0;vertical-align:middle;cursor:pointer;text-decoration:underline;} .val-data{font-weight:bold;font-size:13px;} .type-buy{color:#e53e3e;font-weight:bold;} .type-sell{color:#3182ce;font-weight:bold;} .type-div{color:#38a169;font-weight:bold;} .plus{color:#e53e3e;font-weight:bold;} .minus{color:#3182ce;font-weight:bold;vertical-align:top;} .view-title{font-size:14px;font-weight:bold;margin-top:5px;color:#2b6cb0;line-height:1.5;text-align:center;} .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;justify-content:center;align-items:center;padding:10px;box-sizing:border-box;} .modal-content{background:white;width:100%;max-width:98%;border-radius:8px;padding:15px;box-shadow:0 4px 15px rgba(0,0,0,0.2);box-sizing:border-box;max-height:90vh;overflow-y:auto;display:flex;flex-direction:column;} .modal-header{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #cbd5e0;padding-bottom:8px;margin-bottom:12px;} .modal-title{font-size:14px;font-weight:bold;color:#2b6cb0;display:flex;align-items:center;flex-wrap:wrap;gap:5px;} .modal-close{background:none;border:none;font-size:20px;font-weight:bold;color:#a0aec0;cursor:pointer;} .tab-container{display:flex;gap:10px;margin-bottom:15px;border-bottom:2px solid #e2e8f0;} .tab-btn{background:none;border:none;padding:10px 15px;font-size:13px;font-weight:bold;color:#718096;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;} .tab-btn:hover{color:#2b6cb0;} .tab-btn.active{color:#2b6cb0;border-bottom:3px solid #2b6cb0;} .tab-content{display:none;} .tab-content.active{display:block;} .action-modal-content{max-width:300px;} .btn-action-modal{width:100%;height:38px;border:none;border-radius:4px;cursor:pointer;font-weight:bold;font-size:13px;color:white;margin-top:5px;} .action-modal-buttons{display:flex;gap:8px;margin-top:10px;} #stockModalTitle{display:flex;align-items:center;font-size:14px;font-weight:bold;color:#2b6cb0;flex-wrap:wrap;gap:5px;} .btn-small-toggle{background:#edf2f7;border:1px solid #cbd5e0;border-radius:4px;padding:4px 8px;font-size:11px;font-weight:bold;cursor:pointer;color:#4a5568;transition:all 0.2s;} .btn-small-toggle:hover{background:#e2e8f0;color:#2b6cb0;}
+body{font-family:'Malgun Gothic',sans-serif;margin:10px;background-color:#f5f6f9;color:#333;font-size:13px;} .container{max-width:1500px;margin:0 auto;background:#fff;padding:15px;border-radius:8px;box-shadow:0 4px 6px rgba(0,0,0,0.1);} h2{text-align:center;color:#4a5568;margin-bottom:20px;font-size:1.3rem;} .text-center{text-align:center;} .text-right{text-align:right;} .text-left{text-align:left;} .btn-toggle{width:100%;height:42px;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:bold;font-size:13px;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1);} .btn-toggle-config{background-color:#4a5568;} .btn-toggle-config:hover{background-color:#2d3748;} .config-section{display:none;flex-direction:column;gap:15px;background:#edf2f7;padding:12px;border-radius:6px;margin-bottom:20px;} .config-row-group{display:flex;gap:15px;width:100%;} .config-row-group > .config-box{flex:1;} @media(max-width:650px){.config-row-group{flex-direction:column;} .dashboard-btn-group{flex-direction:column;} .quick-select-container{flex-direction:column !important;} .chart-row-group{flex-direction:column !important;}} .chart-row-group{display:flex; flex-direction:row; gap:15px;} .config-box{background:#fff;padding:12px;border-radius:6px;border:1px solid #cbd5e0;display:flex;flex-direction:column;gap:8px;box-sizing:border-box;} .config-box .title-label{font-size:13px;font-weight:bold;color:#2b6cb0;border-bottom:1px solid #e2e8f0;padding-bottom:5px;margin-bottom:2px;} .config-group{display:flex;flex-direction:column;gap:4px;} .config-group label{font-size:11px;font-weight:bold;color:#4a5568;} .config-group select, .config-group input{padding:8px;border:1px solid #cbd5e0;border-radius:4px;font-size:14px;box-sizing:border-box;height:40px;width:100%;} .btn-full{width:100%;height:38px;border:none;border-radius:4px;cursor:pointer;font-weight:bold;font-size:12px;color:white;box-sizing:border-box;} .btn-add{background-color:#4a5568;} .btn-add:hover{background-color:#2d3748;} .btn-del{background-color:#e53e3e;} .btn-del:hover{background-color:#c53030;} .btn-toggle-input{background-color:#3182ce;} .btn-toggle-input:hover{background-color:#2b6cb0;} .input-form{display:none;flex-direction:column;gap:10px;background:#fff;padding:12px;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:15px;box-shadow:inset 0 1px 3px rgba(0,0,0,0.05);box-sizing:border-box;} .input-form .form-row{display:flex;gap:10px;width:100%;} .input-form .form-row .form-group{flex:1;} .input-form .form-group{display:flex;flex-direction:column;gap:4px;width:100%;box-sizing:border-box;} .input-form .form-group label{font-size:12px;font-weight:bold;color:#4a5568;} .input-form .form-group input, .input-form .form-group select{padding:8px;border:1px solid #cbd5e0;border-radius:4px;font-size:14px;box-sizing:border-box;height:40px;width:100%;background-color:#fff;font-family:inherit;appearance:none;-webkit-appearance:none;color:#111;} .btn-submit{height:40px;background-color:#2b6cb0;color:white;border:none;border-radius:4px;cursor:pointer;font-weight:bold;font-size:14px;margin-top:5px;width:100%;box-sizing:border-box;} .dashboard-btn-group{display:flex;gap:10px;margin-bottom:20px;width:100%;} .btn-dashboard{flex:1;height:45px;background-color:#2b6cb0;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:bold;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1);transition:background-color 0.2s;} .btn-dashboard:hover{background-color:#2c5282;} .btn-stock-dash{background-color:#38a169;} .btn-stock-dash:hover{background-color:#2f855a;} .summary-box{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;background:#f7fafc;border:1px solid #e2e8f0;padding:12px;border-radius:6px;margin-bottom:20px;} .summary-item{display:flex;flex-direction:column;} .summary-item label{font-size:11px;color:#718096;margin-bottom:3px; text-align:right; display:block; width:100%; box-sizing:border-box;} .summary-item span, .summary-item input{font-size:14px;font-weight:bold;border:none;background:transparent;text-align:right; display:block; width:100%; box-sizing:border-box;} .summary-item.input-highlight input{border-bottom:2px solid #3182ce;} .quick-select-container{background-color:#edf2f7;padding:12px;border-radius:6px;border:1px solid #cbd5e0;margin-bottom:15px;display:flex;flex-direction:row;gap:10px;} .quick-select-row{display:flex;flex-direction:column;gap:4px;} .quick-select-row label{font-size:11px;font-weight:bold;color:#2b6cb0;} .quick-dropdown{width:100%;height:40px;padding:8px;border:1px solid #cbd5e0;border-radius:4px;font-size:14px;font-weight:bold;color:#4a5568;background-color:#fff;box-sizing:border-box;} table{width:100%;border-collapse:collapse;margin-top:10px;table-layout:fixed;} th, td{border:1px solid #e2e8f0;padding:8px 4px;font-size:13px;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;} th{background-color:#edf2f7;color:#4a5568;font-weight:bold;text-align:center;font-size:12px;line-height:1.4;} .row-main{background-color:#ffffff;} .clickable-date{font-size:12px;font-weight:bold;color:#2b6cb0;vertical-align:middle;cursor:pointer;text-decoration:underline;} .val-data{font-weight:bold;font-size:13px;} .type-buy{color:#e53e3e;font-weight:bold;} .type-sell{color:#3182ce;font-weight:bold;} .type-div{color:#38a169;font-weight:bold;} .plus{color:#e53e3e;font-weight:bold;} .minus{color:#3182ce;font-weight:bold;vertical-align:top;} .view-title{font-size:14px;font-weight:bold;margin-top:5px;color:#2b6cb0;line-height:1.5;text-align:center;} .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;justify-content:center;align-items:center;padding:10px;box-sizing:border-box;} .modal-content{background:white;width:100%;max-width:98%;border-radius:8px;padding:15px;box-shadow:0 4px 15px rgba(0,0,0,0.2);box-sizing:border-box;max-height:90vh;overflow-y:auto;display:flex;flex-direction:column;} .modal-header{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #cbd5e0;padding-bottom:8px;margin-bottom:12px;} .modal-title{font-size:14px;font-weight:bold;color:#2b6cb0;display:flex;align-items:center;flex-wrap:wrap;gap:5px;} .modal-close{background:none;border:none;font-size:20px;font-weight:bold;color:#a0aec0;cursor:pointer;} .tab-container{display:flex;gap:10px;margin-bottom:15px;border-bottom:2px solid #e2e8f0;} .tab-btn{background:none;border:none;padding:10px 15px;font-size:13px;font-weight:bold;color:#718096;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;} .tab-btn:hover{color:#2b6cb0;} .tab-btn.active{color:#2b6cb0;border-bottom:3px solid #2b6cb0;} .tab-content{display:none;} .tab-content.active{display:block;} .action-modal-content{max-width:300px;} .btn-action-modal{width:100%;height:38px;border:none;border-radius:4px;cursor:pointer;font-weight:bold;font-size:13px;color:white;margin-top:5px;} .action-modal-buttons{display:flex;gap:8px;margin-top:10px;} #stockModalTitle{display:flex;align-items:center;font-size:14px;font-weight:bold;color:#2b6cb0;flex-wrap:wrap;gap:5px;} .btn-small-toggle{background:#edf2f7;border:1px solid #cbd5e0;border-radius:4px;padding:4px 8px;font-size:11px;font-weight:bold;cursor:pointer;color:#4a5568;transition:all 0.2s;} .btn-small-toggle:hover{background:#e2e8f0;color:#2b6cb0;}
 </style></head><body>
 <div class="container"><h2>주식 매매 내역 및 평단가 계산기</h2>
 <button class="btn-toggle btn-toggle-config" onclick="toggleConfigSection()"><span id="configIcon">⚙️</span> <span id="configText">사용자/계좌/종목 설정 열기</span></button>
@@ -148,6 +148,7 @@ body{font-family:'Malgun Gothic',sans-serif;margin:10px;background-color:#f5f6f9
         <label>🔍 종목 전환</label>
         <div style="display:flex; gap:10px; align-items:center;">
             <select class="quick-dropdown" id="quickStockSelect" onchange="selectStockFromQuickSelect(this.value)" style="flex:1;"></select>
+            <button class="btn-small-toggle" style="background-color:#4a5568; color:white; border:none; padding:0 12px; font-size:12px; height:40px; margin:0; white-space:nowrap; border-radius:4px;" onclick="openStockPriceManageModal()">📋 보유종목 현재가 관리</button>
             <button id="btnRefreshPrices" class="btn-small-toggle" style="background-color:#3182ce; color:white; border:none; padding:0 12px; font-size:12px; height:40px; margin:0; white-space:nowrap; border-radius:4px;" onclick="refreshAllStockPrices()">🔄 보유종목 현재가 갱신</button>
         </div>
     </div>
@@ -265,14 +266,45 @@ body{font-family:'Malgun Gothic',sans-serif;margin:10px;background-color:#f5f6f9
     <button class="btn-small-toggle" id="btnTradeLogToggle" onclick="toggleTradeLog()">기본 모드 (최근 3건)</button>
 </div>
 <div><table><thead><tr><th style="width:11%; cursor:pointer; user-select:none; color:#2b6cb0;" onclick="toggleDateSort()" title="클릭 시 날짜순 정렬 변경">날짜 <span id="dateSortIcon">▲</span></th><th style="width:9%;"><select id="tradeFilter" onchange="calculateAll()" style="background:transparent;border:none;font-weight:bold;color:#4a5568;outline:none;cursor:pointer;font-size:12px;appearance:none;-webkit-appearance:none;text-align:center;"><option value="전체">구분 ▼</option><option value="매수">매수</option><option value="매도">매도</option><option value="분배금">분배금</option><option value="입금">입금</option><option value="출금">출금</option></select></th><th style="width:10%;">수량</th><th style="width:12%;">단가/금액</th><th style="width:15%;">정산금액</th><th style="width:10%;">잔여수량</th><th style="width:12%;">평단가</th><th style="width:21%;">손익/비고</th></tr></thead><tbody id="tradeLogBody"></tbody></table></div></div>
+
 <div class="modal-overlay" id="dashboardModal" onclick="closeUserDashboard(event)"><div class="modal-content" onclick="event.stopPropagation()"><div class="modal-header"><div class="modal-title" id="modalTitle">계좌 보유 현황</div><button class="modal-close" onclick="closeUserDashboard()">×</button></div><div class="tab-container" style="display:none;"><button class="tab-btn active" onclick="switchDashboardTab('portfolio',this)">보유 현황</button><button class="tab-btn" onclick="switchDashboardTab('profit',this)">월별 실현손익</button><button class="tab-btn" onclick="switchDashboardTab('dividend',this)">월별 배당금</button></div><div id="tab-portfolio" class="tab-content active" style="overflow-x:auto;"><table class="modal-table"><colgroup><col style="width:16%;"><col style="width:6%;"><col style="width:7%;"><col style="width:7%;"><col style="width:17%;"><col style="width:19%;"><col style="width:16%;"><col style="width:12%;"></colgroup><thead id="modalPortfolioHead"><tr><th style="width:16%;">종목명(코드)</th><th style="width:6%;">보유수량</th><th style="width:7%;">평단가</th><th style="width:7%;">현재가</th><th style="width:17%;">총 매입금액</th><th style="width:19%;">총 평가금액</th><th style="width:16%;">총 자산(예수금포함)</th><th style="width:12%;">총 실현손익</th></tr></thead><tbody id="modalTableBody"></tbody></table></div><div id="tab-profit" class="tab-content" style="overflow-x:auto;"><table class="modal-table"><thead><tr><th style="width:15%;">기간(월)</th><th style="width:15%;">매도일자</th><th style="width:15%;">계좌명</th><th style="width:30%;">종목명</th><th style="width:25%;">실현손익 (수익률)</th></tr></thead><tbody id="modalProfitBody"></tbody></table></div><div id="tab-dividend" class="tab-content" style="overflow-x:auto;"><table class="modal-table"><thead><tr><th style="width:12%;">기간(월)</th><th style="width:15%;">계좌명</th><th style="width:28%;">종목명</th><th style="width:12%;">날짜</th><th style="width:8%;">주식수</th><th style="width:10%;">주당배당금</th><th style="width:15%;">배당금액</th></tr></thead><tbody id="modalDividendBody"></tbody></table></div></div></div>
 <div class="modal-overlay" id="stockDashboardModal" onclick="closeStockDashboard(event)"><div class="modal-content" style="max-width:1000px;" onclick="event.stopPropagation()"><div class="modal-header"><div class="modal-title" id="stockModalTitle">종목 계좌별 보유 현황</div><button class="modal-close" onclick="closeStockDashboard(null)">×</button></div><div style="overflow-x:auto;"><table class="modal-table"><thead><tr><th style="width:14%;">계좌명</th><th style="width:10%;">보유수량</th><th style="width:12%;">평균단가</th><th style="width:12%;">현재가</th><th style="width:18%;">총 매입금액</th><th style="width:18%;">총 평가금액</th><th style="width:16%;">총 실현손익</th></tr></thead><tbody id="stockModalTableBody"></tbody><tfoot id="stockModalTableFoot" style="background-color:#edf2f7;font-weight:bold;"></tfoot></table></div></div></div>
 <div class="modal-overlay" id="actionModal" onclick="closeActionModal()"><div class="modal-content action-modal-content" onclick="event.stopPropagation()"><div class="modal-title" style="margin-bottom:10px;">📋 매매 내역 제어</div><div id="actionModalDesc" style="font-size:13px;color:#718096;line-height:1.5;">선택 내역을 변경합니다.</div><div class="action-modal-buttons"><button class="btn-action-modal" style="background-color:#dd6b20;" onclick="triggerEditFromModal()">수정</button><button class="btn-action-modal" style="background-color:#e53e3e;" onclick="triggerDeleteFromModal()">삭제</button></div></div></div>
 <div class="modal-overlay" id="stockLoadModal" onclick="closeStockLoadModal(event)"><div class="modal-content" style="max-width:1000px;" onclick="event.stopPropagation()"><div class="modal-header"><div class="modal-title">📂 등록된 전체 종목 리스트</div><button class="modal-close" onclick="closeStockLoadModal()">×</button></div><div style="font-size:12px;color:#718096;margin-bottom:10px;">다른 사용자/계좌에 등록된 종목을 선택해 입력합니다.</div><div id="stockLoadList" style="display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto;"></div></div></div>
 <div class="modal-overlay" id="dividendSettingModal" onclick="closeDividendSettingModal(event)"><div class="modal-content" style="max-width:400px;" onclick="event.stopPropagation()"><div class="modal-header"><div class="modal-title">💰 ETF 주당 분배금 설정</div><button class="modal-close" onclick="closeDividendSettingModal()">×</button></div><div style="font-size:12px;color:#718096;margin-bottom:10px;">'ETF'로 구분된 종목 목록입니다. 주당 분배금을 입력해두면 매매 내역(분배금) 입력 시 자동으로 불러옵니다.</div><div id="dividendSettingList" style="display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto;padding:5px;"></div><button class="btn-full" style="background-color:#2b6cb0; margin-top:15px; height:40px;" onclick="saveDividendSettings()">저장하기</button></div></div>
+
+<div class="modal-overlay" id="stockPriceManageModal" onclick="closeStockPriceManageModal(event)">
+    <div class="modal-content" style="max-width:500px;" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <div class="modal-title">📋 보유종목 현재가 관리</div>
+            <button class="modal-close" onclick="closeStockPriceManageModal()">×</button>
+        </div>
+        <div style="font-size:12px;color:#718096;margin-bottom:10px;">
+            보유수량이 있는 종목(펀드 제외)의 현재가입니다.<br>
+            자동 갱신에 성공한 값은 <strong>검은색</strong>으로, 수동 입력 및 갱신 실패로 유지된 이전 값은 <strong style="color:#3182ce;">파란색</strong>으로 표시됩니다.
+        </div>
+        <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+            <button id="btnModalRefresh" class="btn-small-toggle" style="background-color:#3182ce; color:white; border:none; padding:6px 12px; border-radius:4px;" onclick="refreshPricesFromModal()">🔄 현재가 자동 갱신</button>
+        </div>
+        <div style="overflow-x:auto; max-height:400px; margin-bottom:15px;">
+            <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                <colgroup><col style="width:50%;"><col style="width:50%;"></colgroup>
+                <thead>
+                    <tr style="background:#edf2f7;">
+                        <th style="padding:8px; border:1px solid #e2e8f0; font-weight:bold; color:#4a5568; text-align:center;">종목명</th>
+                        <th style="padding:8px; border:1px solid #e2e8f0; font-weight:bold; color:#4a5568; text-align:center;">현재가 (원)</th>
+                    </tr>
+                </thead>
+                <tbody id="stockPriceManageBody"></tbody>
+            </table>
+        </div>
+        <button class="btn-full" style="background-color:#2b6cb0; height:40px;" onclick="saveManualStockPrices()">저장 및 적용하기</button>
+    </div>
+</div>
+
 <script>
 let users=["남호문","홍길동"],userAccountsMap={"남호문":["기본계좌","ISA계좌"],"홍길동":["기본계좌"]},accountStocksMap={"남호문_기본계좌":[{name:"삼성전자 레버리지",code:"122630",type:"주식"},{name:"삼성전자",code:"005930",type:"주식"}],"남호문_ISA계좌":[],"홍길동_기본계좌":[]};
-let tradeLogs=[],stockPrices={},etfDividends={},globalCalculatedAvgPrice=0,globalCalculatedQty=0,editIndex=-1,selectedTargetIndex=-1,isStockEditMode=false,originalStockName="",dateSortOrder='asc';
+let tradeLogs=[],stockPrices={},stockPriceStatus={},etfDividends={},globalCalculatedAvgPrice=0,globalCalculatedQty=0,editIndex=-1,selectedTargetIndex=-1,isStockEditMode=false,originalStockName="",dateSortOrder='asc';
 let dashboardSort={field:null,order:'desc'},currentDashboardTab='portfolio',currentDashboardFilter='전체',currentDashboardStockFilter='전체',expandedPortfolioAccounts=[],expandedProfitMonths=[],expandedDividendMonths=[];
 let cachedTradeRowHtmls=[];
 let isAccSummaryExpanded=false, isTradeLogExpanded=false, isStockSummaryExpanded=false;
@@ -299,6 +331,7 @@ async function refreshAllStockPrices() {
     });
 
     let fetchPromises = [];
+    let attemptedStocks = [];
     for (let s in heldStocks) {
         if (heldStocks[s] > 0) {
             let code = null;
@@ -315,6 +348,7 @@ async function refreshAllStockPrices() {
             }
             if (code && !isFund) {
                 fetchPromises.push(getSingleStockPrice(s, code));
+                attemptedStocks.push(s);
             }
         }
     }
@@ -329,10 +363,14 @@ async function refreshAllStockPrices() {
     let results = await Promise.allSettled(fetchPromises);
     let updatedCount = 0;
     
-    results.forEach(res => {
+    results.forEach((res, idx) => {
+        let sName = attemptedStocks[idx];
         if (res.status === 'fulfilled' && res.value && res.value.price) {
-            stockPrices[res.value.name] = res.value.price;
+            stockPrices[sName] = res.value.price;
+            stockPriceStatus[sName] = 'recent';
             updatedCount++;
+        } else {
+            stockPriceStatus[sName] = 'old';
         }
     });
 
@@ -396,6 +434,8 @@ async function fetchCurrentPrice(stockName, stockCode) {
                     let price = parsed.closePrice;
                     cPriceInput.value = price;
                     stockPrices[stockName] = price;
+                    stockPriceStatus[stockName] = 'recent';
+                    cPriceInput.style.color = "#333";
                     saveToLocalStorage();
                     
                     calculateStockSummary();
@@ -418,6 +458,8 @@ async function fetchCurrentPrice(stockName, stockCode) {
                 let price = priceEl.textContent.trim();
                 cPriceInput.value = price;
                 stockPrices[stockName] = price;
+                stockPriceStatus[stockName] = 'recent';
+                cPriceInput.style.color = "#333";
                 saveToLocalStorage();
                 
                 calculateStockSummary();
@@ -430,7 +472,114 @@ async function fetchCurrentPrice(stockName, stockCode) {
         console.error("현재가 연동 오류:", e);
     }
     
+    stockPriceStatus[stockName] = 'old';
+    cPriceInput.style.color = "#3182ce";
     cPriceInput.placeholder = "조회 실패 (수동입력)";
+    saveToLocalStorage();
+}
+
+function openStockPriceManageModal() {
+    let u = document.getElementById('userSelect').value;
+    if (!u) return alert("사용자를 선택해주세요.");
+
+    let heldStocks = {};
+    tradeLogs.forEach(l => {
+        if (l.user === u) {
+            if (!heldStocks[l.stock]) heldStocks[l.stock] = 0;
+            if (l.type === '매수') heldStocks[l.stock] += l.qty;
+            if (l.type === '매도') heldStocks[l.stock] -= l.qty;
+        }
+    });
+
+    let validStocks = [];
+    for (let s in heldStocks) {
+        if (heldStocks[s] > 0) {
+            let isFund = false;
+            for (let acc of (userAccountsMap[u] || [])) {
+                let stObj = (accountStocksMap[`${u}_${acc}`] || []).find(x => x.name === s);
+                if (stObj) {
+                    if (stObj.type === '펀드' || (stObj.code && (stObj.code === '펀드' || stObj.code.includes('펀드')))) {
+                        isFund = true;
+                    }
+                    break;
+                }
+            }
+            if (!isFund) validStocks.push(s);
+        }
+    }
+
+    let tbody = document.getElementById('stockPriceManageBody');
+    tbody.innerHTML = '';
+    
+    if (validStocks.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="2" style="padding:15px; text-align:center; color:#718096;">관리할 보유 종목(주식/ETF)이 없습니다.</td></tr>`;
+    } else {
+        validStocks.sort().forEach(s => {
+            let currentVal = stockPrices[s] || "";
+            if(currentVal && typeof currentVal === 'number') currentVal = currentVal.toLocaleString();
+            else if(currentVal && typeof currentVal === 'string' && !currentVal.includes(',')) currentVal = parseFloat(currentVal).toLocaleString();
+            
+            let sStatus = stockPriceStatus[s] || 'old';
+            let colorCode = (sStatus === 'recent') ? '#333' : '#3182ce';
+
+            tbody.innerHTML += `<tr>
+                <td style="padding:8px; border:1px solid #e2e8f0; font-weight:bold; text-align:center; vertical-align:middle; color:#4a5568;">${s}</td>
+                <td style="padding:8px; border:1px solid #e2e8f0; text-align:center;">
+                    <div style="display:flex; align-items:center; justify-content:center; gap:5px;">
+                        <input type="text" id="manualPrice_${s}" value="${currentVal}" oninput="formatInputValue(this); this.style.color='#3182ce';" placeholder="금액 입력" style="width:120px; padding:6px; border:1px solid #cbd5e0; border-radius:4px; text-align:right; font-size:14px; font-weight:bold; color:${colorCode};">
+                        <span style="font-size:12px; color:#718096;">원</span>
+                    </div>
+                </td>
+            </tr>`;
+        });
+    }
+    document.getElementById('stockPriceManageModal').style.display = 'flex';
+}
+
+function closeStockPriceManageModal(e) {
+    if (!e || e.target.id === 'stockPriceManageModal' || e.type === 'click') {
+        document.getElementById('stockPriceManageModal').style.display = 'none';
+    }
+}
+
+function saveManualStockPrices() {
+    let inputs = document.querySelectorAll('input[id^="manualPrice_"]');
+    let updatedCount = 0;
+    inputs.forEach(input => {
+        let stockName = input.id.replace('manualPrice_', '');
+        let val = input.value.replace(/,/g, '');
+        if (val && !isNaN(val)) {
+            let oldVal = stockPrices[stockName] ? String(stockPrices[stockName]).replace(/,/g, '') : '';
+            if (val !== oldVal) {
+                stockPrices[stockName] = val;
+                stockPriceStatus[stockName] = 'old'; 
+                updatedCount++;
+            }
+        }
+    });
+    
+    if (updatedCount > 0) {
+        saveToLocalStorage();
+        calculateStockSummary();
+        calculateAccountSummary();
+        calculateAll();
+        alert(`${updatedCount}개 종목의 현재가가 저장되었습니다.`);
+    }
+    closeStockPriceManageModal();
+}
+
+async function refreshPricesFromModal() {
+    let btn = document.getElementById('btnModalRefresh');
+    let originalText = btn.innerHTML;
+    btn.innerHTML = "⏳ 갱신 중...";
+    btn.disabled = true;
+    
+    await refreshAllStockPrices();
+    
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+    
+    openStockPriceManageModal(); 
 }
 
 function calculateNavDisparity() {
@@ -444,7 +593,7 @@ function calculateNavDisparity() {
         res.innerHTML = `매수 적정가: 0원`;
     }
 }
-function saveToLocalStorage(){let ls=localStorage;ls.setItem('calculator_users',JSON.stringify(users));ls.setItem('calculator_userAccountsMap',JSON.stringify(userAccountsMap));ls.setItem('calculator_accountStocksMap',JSON.stringify(accountStocksMap));ls.setItem('calculator_tradeLogs',JSON.stringify(tradeLogs));ls.setItem('calculator_stockPrices',JSON.stringify(stockPrices));ls.setItem('calculator_etfDividends',JSON.stringify(etfDividends));}
+function saveToLocalStorage(){let ls=localStorage;ls.setItem('calculator_users',JSON.stringify(users));ls.setItem('calculator_userAccountsMap',JSON.stringify(userAccountsMap));ls.setItem('calculator_accountStocksMap',JSON.stringify(accountStocksMap));ls.setItem('calculator_tradeLogs',JSON.stringify(tradeLogs));ls.setItem('calculator_stockPrices',JSON.stringify(stockPrices));ls.setItem('calculator_stockPriceStatus',JSON.stringify(stockPriceStatus));ls.setItem('calculator_etfDividends',JSON.stringify(etfDividends));}
 function saveSeedMoney(){let u=document.getElementById('userSelect').value,a=document.getElementById('accountSelect').value;if(u&&a&&a!=="전체계좌")localStorage.setItem(`calculator_seedMoney_${u}_${a}`,document.getElementById('seedMoney').value);}
 function loadSeedMoney(){
     let u=document.getElementById('userSelect').value,a=document.getElementById('accountSelect').value, sInput=document.getElementById('seedMoney');
@@ -461,7 +610,7 @@ function loadSeedMoney(){
         sInput.style.backgroundColor="transparent";
     }
 }
-function loadFromLocalStorage(){let ls=localStorage;if(ls.getItem('calculator_users'))users=JSON.parse(ls.getItem('calculator_users'));if(ls.getItem('calculator_userAccountsMap')){userAccountsMap=JSON.parse(ls.getItem('calculator_userAccountsMap'));accountStocksMap=JSON.parse(ls.getItem('calculator_accountStocksMap'));}else{users.forEach(u=>{userAccountsMap[u]=["기본계좌"];accountStocksMap[`val_기본계좌`]=[];});}users.forEach(u=>{if(!userAccountsMap[u])userAccountsMap[u]=["기본계좌"];userAccountsMap[u].forEach(acc=>{if(!accountStocksMap[`${u}_${acc}`])accountStocksMap[`${u}_${acc}`]=[];});});if(ls.getItem('calculator_tradeLogs')){tradeLogs=JSON.parse(ls.getItem('calculator_tradeLogs'));tradeLogs.forEach(log=>log.account=log.account||"기본계좌");if(tradeLogs.length>0)tradeLogs.sort((a,b)=>a.date.localeCompare(b.date));}if(ls.getItem('calculator_stockPrices'))stockPrices=JSON.parse(ls.getItem('calculator_stockPrices'));if(ls.getItem('calculator_etfDividends'))etfDividends=JSON.parse(ls.getItem('calculator_etfDividends'));}
+function loadFromLocalStorage(){let ls=localStorage;if(ls.getItem('calculator_users'))users=JSON.parse(ls.getItem('calculator_users'));if(ls.getItem('calculator_userAccountsMap')){userAccountsMap=JSON.parse(ls.getItem('calculator_userAccountsMap'));accountStocksMap=JSON.parse(ls.getItem('calculator_accountStocksMap'));}else{users.forEach(u=>{userAccountsMap[u]=["기본계좌"];accountStocksMap[`val_기본계좌`]=[];});}users.forEach(u=>{if(!userAccountsMap[u])userAccountsMap[u]=["기본계좌"];userAccountsMap[u].forEach(acc=>{if(!accountStocksMap[`${u}_${acc}`])accountStocksMap[`${u}_${acc}`]=[];});});if(ls.getItem('calculator_tradeLogs')){tradeLogs=JSON.parse(ls.getItem('calculator_tradeLogs'));tradeLogs.forEach(log=>log.account=log.account||"기본계좌");if(tradeLogs.length>0)tradeLogs.sort((a,b)=>a.date.localeCompare(b.date));}if(ls.getItem('calculator_stockPrices'))stockPrices=JSON.parse(ls.getItem('calculator_stockPrices'));if(ls.getItem('calculator_stockPriceStatus'))stockPriceStatus=JSON.parse(ls.getItem('calculator_stockPriceStatus'));if(ls.getItem('calculator_etfDividends'))etfDividends=JSON.parse(ls.getItem('calculator_etfDividends'));}
 function formatInputValue(input){let val=input.value.replace(/[^0-9]/g,'');input.value=val?parseFloat(val).toLocaleString():'';}
 function toggleConfigSection(){let sec=document.getElementById('configSection'),txt=document.getElementById('configText'),ico=document.getElementById('configIcon');if(sec.style.display==='none'||sec.style.display===''){sec.style.display='flex';txt.innerText='설정창 접기';ico.innerText='❌';}else{sec.style.display='none';txt.innerText='사용자/계좌/종목 설정 열기';ico.innerText='⚙️';}}
 function toggleInputSection(forceOpen=false){let sec=document.getElementById('inputForm'),txt=document.getElementById('inputText'),ico=document.getElementById('inputIcon');if(forceOpen||sec.style.display==='none'||sec.style.display===''){sec.style.display='flex';txt.innerText=editIndex>-1?'데이터 수정창 접기':'데이터 입력창 접기';ico.innerText='❌';}else{sec.style.display='none';txt.innerText='매매 데이터 입력창 열기';ico.innerText='🔽';if(editIndex>-1)resetForm();}}
@@ -501,6 +650,8 @@ function updateStockPriceMap() {
     let s = document.getElementById('stockSelect').value;
     if(s && s !== '전체종목') {
         stockPrices[s] = document.getElementById('currentPrice').value;
+        stockPriceStatus[s] = 'old'; 
+        document.getElementById('currentPrice').style.color = '#3182ce';
         saveToLocalStorage();
         calculateStockSummary();
         calculateAccountSummary();
@@ -588,7 +739,7 @@ function calculateAccountSummary() {
     let purchaseRatio = totalDenom > 0 ? ((totalAccPurchase / totalDenom) * 100).toFixed(1) : "0.0";
 
     let totalAsset = totalAccEval + cb;
-    let seedProfit = totalAsset - sm; // 초기 씨드머니(sm)와 총 평가금액(예수금포함) 기준
+    let seedProfit = totalAsset - sm;
     let seedProfitRate = sm > 0 ? (seedProfit / sm) * 100 : 0;
 
     document.getElementById('currentBalance').innerHTML = `${cb.toLocaleString()} 원 <span style="font-size:13px;color:#718096;font-weight:bold;">(${cashRatio}%)</span>`;
@@ -612,10 +763,8 @@ function calculateAccountSummary() {
     let taEl = document.getElementById('accountTotalAsset');
     if(taEl) {
         taEl.innerText = totalAsset.toLocaleString() + " 원";
-        // 이익(>0)이면 적색, 손해(<0)면 청색, 본전(0)이면 기본 검정색 적용
         taEl.style.color = seedProfit > 0 ? "#e53e3e" : (seedProfit < 0 ? "#3182ce" : "#333");
     }
-
 
     let spEl = document.getElementById('accountSeedProfit');
     if(spEl) {
@@ -854,13 +1003,15 @@ function calculateAll() {
             cPriceInput.style.color = "#2b6cb0";
             cPriceInput.disabled = true;
         } else {
-            cPriceInput.style.color = "#333";
+            cPriceInput.style.color = (stockPriceStatus[s] === 'recent') ? "#333" : "#3182ce";
             cPriceInput.value = stockPrices[s] || '';
             
             if (actS && actS.code) {
                 fetchCurrentPrice(s, actS.code);
             } else {
                 cPriceInput.placeholder = "종목코드 없음 (수동입력)";
+                stockPriceStatus[s] = 'old';
+                cPriceInput.style.color = "#3182ce";
             }
         }
     }
