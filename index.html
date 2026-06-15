@@ -605,7 +605,7 @@ function calculateAccountSummary() {
         accProfitEl.innerText = "0 원 / 0.00%";
         accProfitEl.className = "";
     } else {
-        accProfitEl.innerText = `${accSign}${accEvalProfit.toLocaleString()} 원 / ${accSign}${accEvalProfitRate.toFixed(2)}%`;
+        accProfitEl.innerText = `${accSign}${accEvalProfit.toLocaleString()} 원(${accSign}${accEvalProfitRate.toFixed(2)}%)`;
         accProfitEl.className = accEvalProfit > 0 ? "plus" : (accEvalProfit < 0 ? "minus" : "");
     }
 
@@ -615,7 +615,7 @@ function calculateAccountSummary() {
     let spEl = document.getElementById('accountSeedProfit');
     if(spEl) {
         let sSign = seedProfit > 0 ? "+" : "";
-        spEl.innerText = `${sSign}${seedProfit.toLocaleString()} 원 / ${sSign}${seedProfitRate.toFixed(2)}%`;
+        spEl.innerText = `${sSign}${seedProfit.toLocaleString()} 원(${sSign}${seedProfitRate.toFixed(2)}%)`;
         spEl.className = seedProfit > 0 ? "plus" : (seedProfit < 0 ? "minus" : "");
     }
 
