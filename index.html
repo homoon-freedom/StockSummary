@@ -610,7 +610,12 @@ function calculateAccountSummary() {
     }
 
     let taEl = document.getElementById('accountTotalAsset');
-    if(taEl) taEl.innerText = totalAsset.toLocaleString() + " 원";
+    if(taEl) {
+        taEl.innerText = totalAsset.toLocaleString() + " 원";
+        // 이익(>0)이면 적색, 손해(<0)면 청색, 본전(0)이면 기본 검정색 적용
+        taEl.style.color = seedProfit > 0 ? "#e53e3e" : (seedProfit < 0 ? "#3182ce" : "#333");
+    }
+
 
     let spEl = document.getElementById('accountSeedProfit');
     if(spEl) {
