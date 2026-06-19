@@ -28,19 +28,21 @@ body{font-family:'Malgun Gothic',sans-serif;margin:10px;background-color:#f5f6f9
     height: 38px !important;
     right: 5px !important;
 }
-/* 펼쳐졌을 때의 폰트 및 폭 설정 */
 .select2-results__option {
-    font-size: 14px !important; /* 펼쳐졌을 때 폰트 크기 조정 */
-	 font-weight: bold;
+    font-size: 14px !important; 
+	font-weight: bold;
     padding: 8px 12px !important;
 }
 .select2-dropdown {
-    min-width: 270px !important; /* 드롭다운 창 폭 넓히기 (아이패드 등에서 유용) */
+    min-width: 270px !important; 
     border: 1px solid #cbd5e0 !important;
     box-shadow: 0 4px 10px rgba(0,0,0,0.15) !important;
 }
 .select2-search__field {
     font-size: 13px !important;
+}
+.select2-results__options {
+    max-height: 350px !important;
 }
 </style></head><body>
 <div class="container"><h2>주식 매매 내역 및 평단가 계산기</h2>
@@ -148,11 +150,11 @@ body{font-family:'Malgun Gothic',sans-serif;margin:10px;background-color:#f5f6f9
         </div>
     </div>
     <div class="form-row" style="display:flex; gap:10px;">
-        <div class="form-group" style="flex:4;">
+        <div class="form-group" style="flex:2.5;">
             <label>날짜</label>
             <input type="date" id="tradeDate">
         </div>
-        <div class="form-group" style="flex:2;">
+        <div class="form-group" style="flex:1.5;">
             <label>구분</label>
             <select id="tradeType" onchange="toggleInputFields()">
                 <option value="매수">매수</option>
@@ -164,11 +166,15 @@ body{font-family:'Malgun Gothic',sans-serif;margin:10px;background-color:#f5f6f9
         </div>
         <div class="form-group" style="flex:2;">
             <label id="qtyLabel">체결수량 (주)</label>
-            <input type="number" id="tradeQty" placeholder="수량 입력">
+            <input type="number" id="tradeQty" placeholder="수량 입력" oninput="updateTradeTotal()">
         </div>
         <div class="form-group" style="flex:2;">
             <label id="priceLabel">매수가 (원)</label>
-            <input type="number" id="tradePrice" placeholder="금액 입력">
+            <input type="number" id="tradePrice" placeholder="단가 입력" oninput="updateTradeTotalOrQty()">
+        </div>
+        <div class="form-group" style="flex:2;">
+            <label id="totalAmountLabel">총 금액 (원)</label>
+            <input type="number" id="tradeTotalAmount" placeholder="총액 입력" oninput="updateTradeQty()">
         </div>
     </div>
     <button class="btn-submit" id="submitBtn" type="button" onclick="handleSubmit()">내역 추가</button>
@@ -367,6 +373,47 @@ function initSelect2() {
             width: '100%',
             dropdownAutoWidth: true // 부모 요소 너비에 제한받지 않고 내용에 맞춰 드롭다운이 넒어지게 설정
         });
+    }
+}
+
+// 총 금액 계산 및 수량 계산 함수 연동
+function updateTradeTotal() {
+    let type = document.getElementById('tradeType').value;
+    if (['입금', '출금'].includes(type)) return;
+    
+    let p = parseFloat(document.getElementById('tradePrice').value) || 0;
+    let q = parseFloat(document.getElementById('tradeQty').value) || 0;
+    if (p > 0 && q > 0) {
+        document.getElementById('tradeTotalAmount').value = Math.round(p * q);
+    } else if (!q) {
+        document.getElementById('tradeTotalAmount').value = '';
+    }
+}
+
+function updateTradeQty() {
+    let type = document.getElementById('tradeType').value;
+    if (['입금', '출금'].includes(type)) return;
+    
+    let p = parseFloat(document.getElementById('tradePrice').value) || 0;
+    let t = parseFloat(document.getElementById('tradeTotalAmount').value) || 0;
+    if (p > 0 && t > 0) {
+        let q = Math.floor(t / p); // 소수점 버림 (정수만)
+        document.getElementById('tradeQty').value = q;
+    } else if (!t) {
+        document.getElementById('tradeQty').value = '';
+    }
+}
+
+function updateTradeTotalOrQty() {
+    let type = document.getElementById('tradeType').value;
+    if (['입금', '출금'].includes(type)) return;
+    
+    let q = document.getElementById('tradeQty').value;
+    let t = document.getElementById('tradeTotalAmount').value;
+    if (q !== "") {
+        updateTradeTotal();
+    } else if (t !== "") {
+        updateTradeQty();
     }
 }
 
@@ -748,14 +795,75 @@ function deleteStock(){let curU=document.getElementById('userSelect').value,curA
 function openDividendModal(){ let listContainer = document.getElementById('dividendSettingList'); listContainer.innerHTML = ''; let etfStocks = new Set(); for (let key in accountStocksMap) { accountStocksMap[key].forEach(s => { if (s.type === 'ETF') etfStocks.add(s.name); }); } if (etfStocks.size === 0) { listContainer.innerHTML = '<div style="text-align:center;padding:20px;color:#718096;font-size:13px;">등록된 ETF 종목이 없습니다. 종목 구분에서 ETF를 먼저 설정해주세요.</div>'; } else { Array.from(etfStocks).sort().forEach(stockName => { let currentDiv = etfDividends[stockName] || ''; let row = document.createElement('div'); row.style.cssText = "display:flex; align-items:center; justify-content:space-between; padding:8px; background:#f7fafc; border:1px solid #e2e8f0; border-radius:4px;"; row.innerHTML = ` <div style="font-weight:bold; font-size:13px; color:#4a5568; flex:6; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${stockName}">${stockName}</div> <div style="flex:4; display:flex; align-items:center; gap:5px;"> <input type="number" id="div_input_${stockName}" value="${currentDiv}" placeholder="금액 입력" style="width:100%; padding:6px; border:1px solid #cbd5e0; border-radius:4px; font-size:13px; box-sizing:border-box;"> <span style="font-size:12px; color:#718096;">원</span> </div> `; listContainer.appendChild(row); }); } document.getElementById('dividendSettingModal').style.display = 'flex'; }
 function closeDividendSettingModal(e) { if(!e || e.target.id === 'dividendSettingModal' || e.type === 'click') document.getElementById('dividendSettingModal').style.display = 'none'; }
 function saveDividendSettings() { let inputs = document.querySelectorAll('input[id^="div_input_"]'); inputs.forEach(input => { let stockName = input.id.replace('div_input_', ''); let val = parseFloat(input.value); if (!isNaN(val) && val >= 0) { etfDividends[stockName] = val; } else if (input.value.trim() === '') { delete etfDividends[stockName]; } }); saveToLocalStorage(); alert('ETF 분배금 설정이 저장되었습니다.'); closeDividendSettingModal(); updateAutoDividend(); }
-function updateAutoDividend() { let t = document.getElementById('tradeType').value; let s = document.getElementById('inputStockSelect').value; let tp = document.getElementById('tradePrice'); if (t === '분배금') { if (etfDividends[s] !== undefined) { tp.value = etfDividends[s]; } else if (editIndex === -1) { tp.value = ''; } } }
-function toggleInputFields(){let type=document.getElementById('tradeType').value,pl=document.getElementById('priceLabel'),ql=document.getElementById('qtyLabel'),tq=document.getElementById('tradeQty');if(type==='매수'){pl.innerText='매수가 (원)';ql.innerText='체결수량 (주)';tq.readOnly=false;tq.style.backgroundColor='#fff';}else if(type==='매도'){pl.innerText='매도가 (원)';ql.innerText='매도수량 (주)';tq.readOnly=false;tq.style.backgroundColor='#fff';}else if(type==='분배금'){pl.innerText='주당분배금 (원)';ql.innerText='적용수량 (주)';tq.readOnly=false;tq.style.backgroundColor='#fff';if(editIndex===-1&&(!tq.value||tq.value==="0"))tq.value=globalCalculatedQty;}else if(['입금','출금'].includes(type)){pl.innerText='금액 (원)';ql.innerText='수량 (고정)';tq.value=1;tq.readOnly=true;tq.style.backgroundColor='#edf2f7';} updateAutoDividend();}
+function updateAutoDividend() { let t = document.getElementById('tradeType').value; let s = document.getElementById('inputStockSelect').value; let tp = document.getElementById('tradePrice'); if (t === '분배금') { if (etfDividends[s] !== undefined) { tp.value = etfDividends[s]; updateTradeTotalOrQty(); } else if (editIndex === -1) { tp.value = ''; document.getElementById('tradeTotalAmount').value = ''; } } }
+function toggleInputFields(){
+    let type=document.getElementById('tradeType').value,
+        pl=document.getElementById('priceLabel'),
+        ql=document.getElementById('qtyLabel'),
+        tq=document.getElementById('tradeQty'),
+        tta=document.getElementById('tradeTotalAmount');
+        
+    if(type==='매수'){
+        pl.innerText='매수가 (원)';
+        ql.innerText='체결수량 (주)';
+        tq.readOnly=false; tq.style.backgroundColor='#fff';
+        tta.readOnly=false; tta.style.backgroundColor='#fff';
+    }else if(type==='매도'){
+        pl.innerText='매도가 (원)';
+        ql.innerText='매도수량 (주)';
+        tq.readOnly=false; tq.style.backgroundColor='#fff';
+        tta.readOnly=false; tta.style.backgroundColor='#fff';
+    }else if(type==='분배금'){
+        pl.innerText='주당분배금 (원)';
+        ql.innerText='적용수량 (주)';
+        tq.readOnly=false; tq.style.backgroundColor='#fff';
+        tta.readOnly=false; tta.style.backgroundColor='#fff';
+        if(editIndex===-1&&(!tq.value||tq.value==="0")){
+            tq.value=globalCalculatedQty;
+            updateTradeTotal();
+        }
+    }else if(['입금','출금'].includes(type)){
+        pl.innerText='금액 (원)';
+        ql.innerText='수량 (고정)';
+        tq.value=1; tq.readOnly=true; tq.style.backgroundColor='#edf2f7';
+        tta.value=''; tta.readOnly=true; tta.style.backgroundColor='#edf2f7';
+    }
+    updateAutoDividend();
+}
 function handleSubmit(){ let u=document.getElementById('userSelect').value,a=document.getElementById('accountSelect').value,s=document.getElementById('stockSelect').value,d=document.getElementById('tradeDate').value,t=document.getElementById('tradeType').value,p=parseFloat(document.getElementById('tradePrice').value),q=parseFloat(document.getElementById('tradeQty').value); if(!u||!a||!s)return alert('설정 필요.'); if(a==="전체계좌")return alert('데이터를 입력하려면 특정 계좌를 선택해야 합니다. (전체계좌 입력 불가)'); if(s==='전체종목')return alert('데이터를 입력하려면 특정 종목을 선택해야 합니다.'); if(t==='분배금'&&(isNaN(q)||q<=0))return alert('보유수량 없음.'); if(!d||isNaN(p)||isNaN(q)||p<=0||q<=0)return alert('올바른 값 입력.'); let nl={user:u,account:a,stock:s,date:d,type:t,price:p,qty:q}; if(editIndex>-1){tradeLogs[editIndex]=nl;editIndex=-1;}else tradeLogs.push(nl); tradeLogs.sort((a,b)=>a.date.localeCompare(b.date)); resetForm();saveToLocalStorage();calculateAll(); }
 function showActionModal(idx){selectedTargetIndex=idx;let log=tradeLogs[idx];if(!log)return;let isCash=['입금','출금'].includes(log.type);let unitText=isCash?'금액':(log.type==='분배금'?'주당분배금':'체결가');document.getElementById('actionModalDesc').innerHTML=`<strong>${log.date} [${log.type}]</strong><br>${unitText}: ${log.price.toLocaleString()}원${isCash?'':` / 수량: ${log.qty.toLocaleString()}주`}<br><br>작업을 선택하세요.`;document.getElementById('actionModal').style.display='flex';}
 function closeActionModal(){document.getElementById('actionModal').style.display='none';}
-function triggerEditFromModal(){closeActionModal();let log=tradeLogs[selectedTargetIndex];if(!log)return;editIndex=selectedTargetIndex;handleUserChange(log.user);handleAccountChange(log.account);handleStockChange(log.stock);document.getElementById('tradeDate').value=log.date;document.getElementById('tradeType').value=log.type;toggleInputFields();document.getElementById('tradePrice').value=log.price;document.getElementById('tradeQty').value=log.qty;document.getElementById('submitBtn').innerText="내역 수정 완료";toggleInputSection(true);window.scrollTo({top:0,behavior:'smooth'});}
+function triggerEditFromModal(){
+    closeActionModal();let log=tradeLogs[selectedTargetIndex];if(!log)return;
+    editIndex=selectedTargetIndex;
+    handleUserChange(log.user);handleAccountChange(log.account);handleStockChange(log.stock);
+    document.getElementById('tradeDate').value=log.date;
+    document.getElementById('tradeType').value=log.type;
+    toggleInputFields();
+    document.getElementById('tradePrice').value=log.price;
+    document.getElementById('tradeQty').value=log.qty;
+    if (!['입금', '출금'].includes(log.type)) {
+        document.getElementById('tradeTotalAmount').value = Math.round(log.price * log.qty);
+    } else {
+        document.getElementById('tradeTotalAmount').value = '';
+    }
+    document.getElementById('submitBtn').innerText="내역 수정 완료";
+    toggleInputSection(true);
+    window.scrollTo({top:0,behavior:'smooth'});
+}
 function triggerDeleteFromModal(){closeActionModal();if(editIndex===selectedTargetIndex)return alert('수정 중 삭제 불가.');if(!confirm("삭제 진행?"))return;tradeLogs.splice(selectedTargetIndex,1);if(editIndex>selectedTargetIndex)editIndex--;saveToLocalStorage();calculateAll();}
-function resetForm(){editIndex=-1;document.getElementById('tradeDate').value=new Date().toISOString().substring(0,10);document.getElementById('tradeType').value='매수';document.getElementById('tradePrice').value='';document.getElementById('tradeQty').value='';document.getElementById('tradeQty').readOnly=false;document.getElementById('tradeQty').style.backgroundColor='#fff';toggleInputFields();document.getElementById('submitBtn').innerText="내역 추가";}
+function resetForm(){
+    editIndex=-1;
+    document.getElementById('tradeDate').value=new Date().toISOString().substring(0,10);
+    document.getElementById('tradeType').value='매수';
+    document.getElementById('tradePrice').value='';
+    document.getElementById('tradeQty').value='';
+    document.getElementById('tradeTotalAmount').value='';
+    document.getElementById('tradeQty').readOnly=false;
+    document.getElementById('tradeQty').style.backgroundColor='#fff';
+    toggleInputFields();
+    document.getElementById('submitBtn').innerText="내역 추가";
+}
 
 function updateStockPriceMap() {
     let s = document.getElementById('stockSelect').value;
