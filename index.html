@@ -1,6 +1,4 @@
-요청하신 대로 **"적정 매수가 계산"**과 관련된 UI(입력창 및 결과창)와 JavaScript 함수를 모두 제거한 전체 코드입니다.
-아래 코드를 복사해서 기존 파일에 그대로 덮어쓰기 하시면 됩니다.
-```html
+
 <!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>주식 평단가 계산기</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
@@ -1265,5 +1263,3 @@ function selectStockToLoad(name,code,type){document.getElementById('newStockName
 function exportData(){let exportObj={};for(let i=0;i<localStorage.length;i++){let key=localStorage.key(i);if(key.startsWith('calculator_'))exportObj[key]=localStorage.getItem(key);}if(Object.keys(exportObj).length===0)return alert("내보낼 백업 데이터가 존재하지 않습니다.");let dataStr=JSON.stringify(exportObj),blob=new Blob([dataStr],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`stock_backup_${new Date().toISOString().substring(0,10)}.json`;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);}
 function importData(event){let file=event.target.files[0];if(!file)return;if(!confirm("기존 데이터가 완전히 덮어쓰기 됩니다. 진행하시겠습니까?")){event.target.value='';return;}let reader=new FileReader();reader.onload=function(e){try{let importedData=JSON.parse(e.target.result),hasValidData=Object.keys(importedData).some(key=>key.startsWith('calculator_'));if(!hasValidData)throw new Error("유효한 데이터 형식이 아닙니다.");let keysToRemove=[];for(let i=0;i<localStorage.length;i++){if(localStorage.key(i).startsWith('calculator_'))keysToRemove.push(localStorage.key(i));}keysToRemove.forEach(k=>localStorage.removeItem(k));for(let key in importedData){if(key.startsWith('calculator_'))localStorage.setItem(key,importedData[key]);}alert('데이터 연동이 완료되었습니다.');location.reload();}catch(error){alert('파일 오류.');console.error(error);}event.target.value='';};reader.readAsText(file);}
 </script></body></html>
-
-```
