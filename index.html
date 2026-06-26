@@ -1,3 +1,6 @@
+요청하신 대로 **"적정 매수가 계산"**과 관련된 UI(입력창 및 결과창)와 JavaScript 함수를 모두 제거한 전체 코드입니다.
+아래 코드를 복사해서 기존 파일에 그대로 덮어쓰기 하시면 됩니다.
+```html
 <!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>주식 평단가 계산기</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
@@ -45,8 +48,26 @@ body{font-family:'Malgun Gothic',sans-serif;margin:10px;background-color:#f5f6f9
     max-height: 350px !important;
 }
 </style></head><body>
+
 <div class="container"><h2>주식 매매 내역 및 평단가 계산기</h2>
-<button class="btn-toggle btn-toggle-config" onclick="toggleConfigSection()"><span id="configIcon">⚙️</span> <span id="configText">사용자/계좌/종목 설정 열기</span></button>
+
+<div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+    <button class="btn-toggle btn-toggle-config" style="margin-bottom: 0; flex: 1.5; height: 45px;" onclick="toggleConfigSection()">
+        <span id="configIcon">⚙️</span> <span id="configText">설정 열기</span>
+    </button>
+    
+    <button class="btn-toggle btn-toggle-input" style="margin-bottom: 0; flex: 1.5; height: 45px;" onclick="toggleInputSection()">
+        <span id="inputIcon">🔽</span> <span id="inputText">매매 입력</span>
+    </button>
+    
+    <div class="dashboard-btn-group" style="margin-bottom: 0; flex: 6; gap: 8px;">
+        <button class="btn-dashboard" onclick="openUserDashboard('portfolio')">📂 보유현황</button>
+        <button class="btn-dashboard btn-stock-dash" onclick="openStockDashboard()">📊 계좌별</button>
+        <button class="btn-dashboard" style="background-color:#dd6b20;" onclick="openUserDashboard('profit')">📈 실현손익</button>
+        <button class="btn-dashboard" style="background-color:#319795;" onclick="openUserDashboard('dividend')">💰 배당금</button>
+    </div>
+</div>
+
 <div class="config-section" id="configSection">
     <div class="config-row-group">
         <div class="config-box">
@@ -133,7 +154,7 @@ body{font-family:'Malgun Gothic',sans-serif;margin:10px;background-color:#f5f6f9
         <div style="font-size:11px;color:#e53e3e;margin-top:2px;font-weight:bold;">※ 경고: 불러오기를 진행하면 기존 데이터는 모두 삭제되고 덮어쓰기 됩니다.</div>
     </div>
 </div>
-<button class="btn-toggle btn-toggle-input" onclick="toggleInputSection()"><span id="inputIcon">🔽</span> <span id="inputText">매매 데이터 입력창 열기</span></button>
+
 <div class="input-form" id="inputForm">
     <div style="background-color:#f7fafc;padding:10px;border-radius:4px;border:1px dashed #cbd5e0;margin-bottom:5px;display:flex;flex-direction:row;gap:10px;">
         <div class="form-group" style="flex:2;">
@@ -179,7 +200,6 @@ body{font-family:'Malgun Gothic',sans-serif;margin:10px;background-color:#f5f6f9
     </div>
     <button class="btn-submit" id="submitBtn" type="button" onclick="handleSubmit()">내역 추가</button>
 </div>
-<div class="dashboard-btn-group"><button class="btn-dashboard" onclick="openUserDashboard('portfolio')">📂 보유현황</button><button class="btn-dashboard btn-stock-dash" onclick="openStockDashboard()">📊계좌별 현황</button><button class="btn-dashboard" style="background-color:#dd6b20;" onclick="openUserDashboard('profit')">📈실현손익</button><button class="btn-dashboard" style="background-color:#319795;" onclick="openUserDashboard('dividend')">💰배당금</button></div>
 
 <div class="quick-select-container" style="align-items: flex-end;">
     <div class="quick-select-row" style="flex: 1;">
@@ -257,20 +277,7 @@ body{font-family:'Malgun Gothic',sans-serif;margin:10px;background-color:#f5f6f9
         <button class="btn-small-toggle" id="btnStockSummaryToggle" onclick="toggleStockSummary()">기본 모드</button>
     </div>
 </div>
-<div style="background:#f7fafc; border:1px solid #e2e8f0; padding:10px; border-radius:6px; margin-bottom:10px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-    <span style="font-size:13px; font-weight:bold; color:#4a5568;">🔍 적정 매수가 계산</span>
-    <div style="display:flex; align-items:center; gap:5px;">
-        <input type="text" id="calcPrice" placeholder="현재가 입력" style="padding:6px; border:1px solid #cbd5e0; border-radius:4px; width:110px; font-size:13px;" oninput="formatInputValue(this); calculateNavDisparity();">
-        <span style="font-size:12px; color:#718096;">원</span>
-    </div>
-    <div style="display:flex; align-items:center; gap:5px;">
-        <input type="text" id="calcDisparity" placeholder="괴리율(%) 입력" style="padding:6px; border:1px solid #cbd5e0; border-radius:4px; width:110px; font-size:13px;" oninput="this.value=this.value.replace(/[^0-9.-]/g,''); calculateNavDisparity();">
-        <span style="font-size:12px; color:#718096;">%</span>
-    </div>
-    <div id="calcResult" style="font-size:13px; font-weight:bold; color:#2b6cb0; margin-left:5px; background:#fff; padding:6px 12px; border-radius:4px; border:1px solid #cbd5e0;">
-        매수 적정가: 0원
-    </div>
-</div>
+
 <div class="summary-box">
     <div class="summary-item"><label>해당 종목 평단가 (보유수량)</label><span id="avgPriceAndQty" style="color:#2b6cb0; font-weight:bold;">0 원 (0 주)</span></div>
     <div class="summary-item input-highlight"><label>📊 현재가 입력 (원)</label><input type="text" id="currentPrice" placeholder="조회 중..." oninput="formatInputValue(this); updateStockPriceMap();"></div>
@@ -687,17 +694,6 @@ async function refreshPricesFromModal() {
     openStockPriceManageModal(); 
 }
 
-function calculateNavDisparity() {
-    let price = parseFloat(document.getElementById('calcPrice').value.replace(/,/g, '')) || 0;
-    let disparity = parseFloat(document.getElementById('calcDisparity').value) || 0;
-    let res = document.getElementById('calcResult');
-    if (price > 0) {
-        let fairPrice = price / (1 + (disparity / 100));
-        res.innerHTML = `매수 적정가: <span style="color:#e53e3e">${Math.round(fairPrice).toLocaleString()}</span>원`;
-    } else {
-        res.innerHTML = `매수 적정가: 0원`;
-    }
-}
 function saveToLocalStorage(){let ls=localStorage;ls.setItem('calculator_users',JSON.stringify(users));ls.setItem('calculator_userAccountsMap',JSON.stringify(userAccountsMap));ls.setItem('calculator_accountStocksMap',JSON.stringify(accountStocksMap));ls.setItem('calculator_tradeLogs',JSON.stringify(tradeLogs));ls.setItem('calculator_stockPrices',JSON.stringify(stockPrices));ls.setItem('calculator_stockPriceStatus',JSON.stringify(stockPriceStatus));ls.setItem('calculator_etfDividends',JSON.stringify(etfDividends));}
 function saveSeedMoney(){let u=document.getElementById('userSelect').value,a=document.getElementById('accountSelect').value;if(u&&a&&a!=="전체계좌")localStorage.setItem(`calculator_seedMoney_${u}_${a}`,document.getElementById('seedMoney').value);}
 function loadSeedMoney(){
@@ -717,8 +713,8 @@ function loadSeedMoney(){
 }
 function loadFromLocalStorage(){let ls=localStorage;if(ls.getItem('calculator_users'))users=JSON.parse(ls.getItem('calculator_users'));if(ls.getItem('calculator_userAccountsMap')){userAccountsMap=JSON.parse(ls.getItem('calculator_userAccountsMap'));accountStocksMap=JSON.parse(ls.getItem('calculator_accountStocksMap'));}else{users.forEach(u=>{userAccountsMap[u]=["기본계좌"];accountStocksMap[`val_기본계좌`]=[];});}users.forEach(u=>{if(!userAccountsMap[u])userAccountsMap[u]=["기본계좌"];userAccountsMap[u].forEach(acc=>{if(!accountStocksMap[`${u}_${acc}`])accountStocksMap[`${u}_${acc}`]=[];});});if(ls.getItem('calculator_tradeLogs')){tradeLogs=JSON.parse(ls.getItem('calculator_tradeLogs'));tradeLogs.forEach(log=>log.account=log.account||"기본계좌");if(tradeLogs.length>0)tradeLogs.sort((a,b)=>a.date.localeCompare(b.date));}if(ls.getItem('calculator_stockPrices'))stockPrices=JSON.parse(ls.getItem('calculator_stockPrices'));if(ls.getItem('calculator_stockPriceStatus'))stockPriceStatus=JSON.parse(ls.getItem('calculator_stockPriceStatus'));if(ls.getItem('calculator_etfDividends'))etfDividends=JSON.parse(ls.getItem('calculator_etfDividends'));}
 function formatInputValue(input){let val=input.value.replace(/[^0-9]/g,'');input.value=val?parseFloat(val).toLocaleString():'';}
-function toggleConfigSection(){let sec=document.getElementById('configSection'),txt=document.getElementById('configText'),ico=document.getElementById('configIcon');if(sec.style.display==='none'||sec.style.display===''){sec.style.display='flex';txt.innerText='설정창 접기';ico.innerText='❌';}else{sec.style.display='none';txt.innerText='사용자/계좌/종목 설정 열기';ico.innerText='⚙️';}}
-function toggleInputSection(forceOpen=false){let sec=document.getElementById('inputForm'),txt=document.getElementById('inputText'),ico=document.getElementById('inputIcon');if(forceOpen||sec.style.display==='none'||sec.style.display===''){sec.style.display='flex';txt.innerText=editIndex>-1?'데이터 수정창 접기':'데이터 입력창 접기';ico.innerText='❌';}else{sec.style.display='none';txt.innerText='매매 데이터 입력창 열기';ico.innerText='🔽';if(editIndex>-1)resetForm();}}
+function toggleConfigSection(){let sec=document.getElementById('configSection'),txt=document.getElementById('configText'),ico=document.getElementById('configIcon');if(sec.style.display==='none'||sec.style.display===''){sec.style.display='flex';txt.innerText='설정창 접기';ico.innerText='❌';}else{sec.style.display='none';txt.innerText='설정 열기';ico.innerText='⚙️';}}
+function toggleInputSection(forceOpen=false){let sec=document.getElementById('inputForm'),txt=document.getElementById('inputText'),ico=document.getElementById('inputIcon');if(forceOpen||sec.style.display==='none'||sec.style.display===''){sec.style.display='flex';txt.innerText=editIndex>-1?'데이터 수정창 접기':'매매 입력 접기';ico.innerText='❌';}else{sec.style.display='none';txt.innerText='매매 입력';ico.innerText='🔽';if(editIndex>-1)resetForm();}}
 function toggleAccSummary(){isAccSummaryExpanded = !isAccSummaryExpanded; let ext = document.getElementById('accSummaryExtended'); let btn = document.getElementById('btnAccSummaryToggle'); if(isAccSummaryExpanded){ ext.style.display='flex'; btn.innerText='확장 모드 닫기'; let u = document.getElementById('userSelect').value; let a = document.getElementById('accountSelect').value; if(u && a) renderYearlyCharts(u, a); } else { ext.style.display='none'; btn.innerText='기본 모드'; }}
 function toggleStockSummary(){isStockSummaryExpanded = !isStockSummaryExpanded; let ext = document.getElementById('stockSummaryExtended'); let btn = document.getElementById('btnStockSummaryToggle'); if(isStockSummaryExpanded){ ext.style.display='flex'; btn.innerText='확장 모드 닫기'; renderStockExtendedCharts(); } else { ext.style.display='none'; btn.innerText='기본 모드'; }}
 function toggleTradeLog(){isTradeLogExpanded = !isTradeLogExpanded; let btn = document.getElementById('btnTradeLogToggle'); if(isTradeLogExpanded){ btn.innerText='확장 모드 (전체)'; } else { btn.innerText='기본 모드 (최근 3건)'; } renderTradeLogs(); }
@@ -1269,3 +1265,5 @@ function selectStockToLoad(name,code,type){document.getElementById('newStockName
 function exportData(){let exportObj={};for(let i=0;i<localStorage.length;i++){let key=localStorage.key(i);if(key.startsWith('calculator_'))exportObj[key]=localStorage.getItem(key);}if(Object.keys(exportObj).length===0)return alert("내보낼 백업 데이터가 존재하지 않습니다.");let dataStr=JSON.stringify(exportObj),blob=new Blob([dataStr],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`stock_backup_${new Date().toISOString().substring(0,10)}.json`;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);}
 function importData(event){let file=event.target.files[0];if(!file)return;if(!confirm("기존 데이터가 완전히 덮어쓰기 됩니다. 진행하시겠습니까?")){event.target.value='';return;}let reader=new FileReader();reader.onload=function(e){try{let importedData=JSON.parse(e.target.result),hasValidData=Object.keys(importedData).some(key=>key.startsWith('calculator_'));if(!hasValidData)throw new Error("유효한 데이터 형식이 아닙니다.");let keysToRemove=[];for(let i=0;i<localStorage.length;i++){if(localStorage.key(i).startsWith('calculator_'))keysToRemove.push(localStorage.key(i));}keysToRemove.forEach(k=>localStorage.removeItem(k));for(let key in importedData){if(key.startsWith('calculator_'))localStorage.setItem(key,importedData[key]);}alert('데이터 연동이 완료되었습니다.');location.reload();}catch(error){alert('파일 오류.');console.error(error);}event.target.value='';};reader.readAsText(file);}
 </script></body></html>
+
+```
