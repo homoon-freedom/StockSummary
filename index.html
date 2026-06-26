@@ -526,66 +526,48 @@ async function getSingleStockPrice(stockName, stockCode) {
 }
 
 async function fetchCurrentPrice(stockName, stockCode) {
+    // [중요] 배포하신 구글 웹 앱 URL로 반드시 변경하세요
+    const API_URL = "https://script.google.com/macros/s/AKfycbxWmdltCjpz5LAMvVj-VCzeYnhjWQy_WZ2XIq0tGzzAiiG4xhBrTKf4lKP-4w1OJIbc-g/exec"; 
+    
     let cPriceInput = document.getElementById('currentPrice');
-    cPriceInput.placeholder = "실시간 조회 중...";
+    cPriceInput.placeholder = "스프레드시트 조회 중...";
+    
     try {
-        let code = stockCode.trim();
-        if(!code) throw new Error("종목 코드 없음");
-
-        let url = `https://api.allorigins.win/get?url=${encodeURIComponent('https://m.stock.naver.com/api/stock/' + code + '/basic')}`;
-        let res = await fetch(url);
+        // 1. 구글 스프레드시트에서 전체 데이터를 JSON으로 가져오기
+        let res = await fetch(API_URL);
+        if (!res.ok) throw new Error("네트워크 오류");
         
-        if (res.ok) {
-            let data = await res.json();
-            if (data.contents) {
-                let parsed = JSON.parse(data.contents);
-                if (parsed.closePrice) {
-                    let price = parsed.closePrice;
-                    cPriceInput.value = price;
-                    stockPrices[stockName] = price;
-                    stockPriceStatus[stockName] = 'recent';
-                    cPriceInput.style.color = "#333";
-                    saveToLocalStorage();
-                    
-                    calculateStockSummary();
-                    calculateAccountSummary();
-                    cPriceInput.placeholder = "현재가 입력 (원)";
-                    return; 
-                }
-            }
-        }
+        let data = await res.json();
         
-        let fallbackUrl = `https://api.allorigins.win/get?url=${encodeURIComponent('https://finance.naver.com/item/main.naver?code=' + code)}`;
-        let fallbackRes = await fetch(fallbackUrl);
-        if (fallbackRes.ok) {
-            let fallbackData = await fallbackRes.json();
-            let parser = new DOMParser();
-            let doc = parser.parseFromString(fallbackData.contents, "text/html");
-            let priceEl = doc.querySelector('.no_today .blind');
+        // 2. data 객체에서 stockCode에 해당하는 값을 찾음
+        // 스프레드시트에서 코드(A열)가 키, 가격(B열)이 값으로 들어옴
+        let price = data[stockCode.trim()];
+        
+        if (price) {
+            // 가격 포맷팅 (쉼표 제거 후 재설정)
+            let formattedPrice = Math.floor(price).toLocaleString();
             
-            if (priceEl) {
-                let price = priceEl.textContent.trim();
-                cPriceInput.value = price;
-                stockPrices[stockName] = price;
-                stockPriceStatus[stockName] = 'recent';
-                cPriceInput.style.color = "#333";
-                saveToLocalStorage();
-                
-                calculateStockSummary();
-                calculateAccountSummary();
-                cPriceInput.placeholder = "현재가 입력 (원)";
-                return;
-            }
+            cPriceInput.value = formattedPrice;
+            stockPrices[stockName] = formattedPrice;
+            stockPriceStatus[stockName] = 'recent';
+            cPriceInput.style.color = "#333";
+            
+            // 데이터 저장 및 UI 업데이트
+            saveToLocalStorage();
+            calculateStockSummary();
+            calculateAccountSummary();
+            cPriceInput.placeholder = "현재가 입력 (원)";
+        } else {
+            throw new Error("코드 없음");
         }
     } catch(e) {
-        console.error("현재가 연동 오류:", e);
+        console.error("데이터 연동 오류:", e);
+        stockPriceStatus[stockName] = 'old';
+        cPriceInput.style.color = "#3182ce";
+        cPriceInput.placeholder = "조회 실패 (수동입력)";
     }
-    
-    stockPriceStatus[stockName] = 'old';
-    cPriceInput.style.color = "#3182ce";
-    cPriceInput.placeholder = "조회 실패 (수동입력)";
-    saveToLocalStorage();
 }
+
 
 function openStockPriceManageModal() {
     let u = document.getElementById('userSelect').value;
