@@ -1,3 +1,4 @@
+
 <!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>주식 평단가 계산기</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
@@ -208,7 +209,13 @@ body{font-family:'Malgun Gothic',sans-serif;margin:10px;background-color:#f5f6f9
         <select class="quick-dropdown" id="quickAccountSelect" onchange="handleAccountChange(this.value)"></select>
     </div>
     <div class="quick-select-row" style="flex: 8;">
-        <label>🔍 종목 전환</label>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <label>🔍 종목 전환</label>
+            <label style="cursor:pointer; display:flex; align-items:center; gap:4px; font-size:12px; color:#4a5568; font-weight:bold;">
+                <input type="checkbox" id="filterZeroQtyCheckbox" onchange="triggerStockOptionsRender()" style="width:14px; height:14px; margin:0; cursor:pointer;">
+                보유수량 0 제외
+            </label>
+        </div>
         <div style="display:flex; gap:10px; align-items:center;">
             <select class="quick-dropdown" id="quickStockSelect" onchange="selectStockFromQuickSelect(this.value)" style="flex:1;"></select>
             <button class="btn-small-toggle" style="background-color:#4a5568; color:white; border:none; padding:0 12px; font-size:12px; height:40px; margin:0; white-space:nowrap; border-radius:4px;" onclick="openStockPriceManageModal()">📋 보유종목 현재가 관리</button>
@@ -716,8 +723,10 @@ function setSelectValues(ids,val,html){
 
 function renderSelectOptions(){let uSel=document.getElementById('userSelect'),curU=uSel.value||users[0],opts=users.map(u=>`<option value="${u}">${u}</option>`).join('');if(!users.includes(curU)&&users.length>0)curU=users[0];setSelectValues(['userSelect','quickUserSelect','inputUserSelect'],curU,opts);renderAccountOptions(curU);}
 function renderAccountOptions(u){ let aSel=document.getElementById('accountSelect'),accs=userAccountsMap[u]||[],curA=aSel.value; let opts = accs.map(a=>`<option value="${a}">${a}</option>`).join(''); if(accs.length===0){ opts=`<option value="">계좌 없음</option>`; curA=""; }else{ opts=`<option value="전체계좌">전체계좌</option>`+opts; curA=(curA==="전체계좌"||accs.includes(curA))?curA:"전체계좌"; } setSelectValues(['accountSelect','quickAccountSelect','inputAccountSelect'],curA,opts); renderStockOptions(u,curA); }
+
 function renderStockOptions(u,a){ 
     let sSel=document.getElementById('stockSelect'),curS=sSel.value,opts="",stks=[]; 
+    
     if(a==="전체계좌"){ 
         let stockSet=new Set(); 
         (userAccountsMap[u]||[]).forEach(acc=>{ 
@@ -728,6 +737,20 @@ function renderStockOptions(u,a){
     }else{ 
         stks=[...(accountStocksMap[`${u}_${a}`]||[])]; 
     } 
+    
+    // [추가된 로직] 보유수량 0 제외 체크박스 필터링
+    let hideZero = document.getElementById('filterZeroQtyCheckbox') && document.getElementById('filterZeroQtyCheckbox').checked;
+    if(hideZero) {
+        let tempQty = {};
+        tradeLogs.forEach(l => {
+            if(l.user === u && (a === "전체계좌" || l.account === a)) {
+                if(!tempQty[l.stock]) tempQty[l.stock] = 0;
+                if(l.type === '매수') tempQty[l.stock] += l.qty;
+                if(l.type === '매도') tempQty[l.stock] -= l.qty;
+            }
+        });
+        stks = stks.filter(s => (tempQty[s.name] || 0) > 0);
+    }
     
     // 우선순위에 따른 종목 리스트 정렬
     stks.sort((x, y) => {
@@ -746,15 +769,30 @@ function renderStockOptions(u,a){
     });
 
     opts=stks.map(s=>`<option value="${s.name}">${s.code?s.name+' ('+s.code+')':s.name}</option>`).join(''); 
+    
     if(stks.length===0){ 
-        opts=`<option value="">등록된 종목 없음</option>`; 
+        opts=`<option value="">등록된/보유중인 종목 없음</option>`; 
         curS=""; 
     } else{ 
         opts=`<option value="전체종목">전체종목</option>`+opts; 
         curS=(curS==="전체종목"||stks.some(s=>s.name===curS))?curS:"전체종목"; 
     } 
+    
     setSelectValues(['stockSelect','quickStockSelect','inputStockSelect'],curS,opts); 
 }
+
+function triggerStockOptionsRender() {
+    let u = document.getElementById('userSelect').value;
+    let a = document.getElementById('accountSelect').value;
+    
+    // 종목 리스트 재렌더링
+    renderStockOptions(u, a);
+    
+    // 만약 현재 선택되어 있던 종목이 보유량 0이라서 목록에서 사라졌다면, 전체종목(또는 빈값)으로 자동 갱신
+    let updatedStock = document.getElementById('stockSelect').value;
+    handleStockChange(updatedStock);
+}
+
 function changeStockType(newType) { let currentStockName = document.getElementById('stockSelect').value; if (!currentStockName || currentStockName === '전체종목') return; let updated = false; for (let key in accountStocksMap) { let stock = accountStocksMap[key].find(s => s.name === currentStockName); if (stock) { stock.type = newType; updated = true; } } if (updated) { document.getElementById('newStockType').value = newType; saveToLocalStorage(); calculateAll(); } }
 function handleUserChange(u){setSelectValues(['userSelect','quickUserSelect','inputUserSelect'],u,document.getElementById('userSelect').innerHTML);renderAccountOptions(u);loadSeedMoney();calculateAll();}
 function handleAccountChange(a){setSelectValues(['accountSelect','quickAccountSelect','inputAccountSelect'],a,document.getElementById('accountSelect').innerHTML);renderStockOptions(document.getElementById('userSelect').value,a);loadSeedMoney();calculateAll();}
